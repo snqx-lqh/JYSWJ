@@ -8,32 +8,20 @@ CONFIG += c++11
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-DEFINES += APPVERSION=\\\"V1.0.0\\\"
+DEFINES += APPVERSION=\\\"V1.0.1\\\"
 
 SOURCES += \
-    introduceform.cpp \
     main.cpp \
-    mainwindow.cpp \
-    portsettingsform.cpp \
-    recvareaform.cpp \
-    sendareaform.cpp \
-    serialsettingsform.cpp
+    mainwindow.cpp
 
 HEADERS += \
-    introduceform.h \
-    mainwindow.h \
-    portsettingsform.h \
-    recvareaform.h \
-    sendareaform.h \
-    serialsettingsform.h
+    mainwindow.h
 
 FORMS += \
-    introduceform.ui \
-    mainwindow.ui \
-    portsettingsform.ui \
-    recvareaform.ui \
-    sendareaform.ui \
-    serialsettingsform.ui
+    mainwindow.ui
+
+INCLUDEPATH += $$PWD/DeviceIOService
+include($$PWD/DeviceIOService/DeviceIOService.pri)
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
