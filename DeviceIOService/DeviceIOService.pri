@@ -1,7 +1,11 @@
 HEADERS += \
-    $$PWD/abstractioservice.h \
-    $$PWD/serialioservice.h
+    $$PWD/serialioservice.h \
+    $$PWD/tcpclientioservice.h \
+    $$PWD/tcpserverioservice.h \
+    $$PWD/udpioservice.h
 
 SOURCES += \
-    $$PWD/abstractioservice.cpp \
-    $$PWD/serialioservice.cpp
+    $$PWD/serialioservice.cpp \
+    $$PWD/tcpclientioservice.cpp \
+    $$PWD/tcpserverioservice.cpp \
+    $$PWD/udpioservice.cpp

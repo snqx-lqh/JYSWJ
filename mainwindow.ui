@@ -71,9 +71,9 @@
             </sizepolicy>
            </property>
            <property name="currentIndex">
-            <number>0</number>
+            <number>2</number>
            </property>
-           <widget class="QWidget" name="page">
+           <widget class="QWidget" name="page_serial">
             <layout class="QVBoxLayout" name="verticalLayout_9">
              <property name="leftMargin">
               <number>0</number>
@@ -95,6 +95,9 @@
                <property name="fieldGrowthPolicy">
                 <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
                </property>
+               <property name="rowWrapPolicy">
+                <enum>QFormLayout::DontWrapRows</enum>
+               </property>
                <item row="0" column="0">
                 <widget class="QLabel" name="label_2">
                  <property name="sizePolicy">
@@ -104,7 +107,7 @@
                   </sizepolicy>
                  </property>
                  <property name="text">
-                  <string> 波特率 </string>
+                  <string>波 特 率</string>
                  </property>
                 </widget>
                </item>
@@ -114,14 +117,14 @@
                <item row="1" column="0">
                 <widget class="QLabel" name="label_4">
                  <property name="text">
-                  <string> 停止位 </string>
+                  <string>停 止 位</string>
                  </property>
                 </widget>
                </item>
                <item row="2" column="0">
                 <widget class="QLabel" name="label_5">
                  <property name="text">
-                  <string> 数据位 </string>
+                  <string>数 据 位</string>
                  </property>
                 </widget>
                </item>
@@ -171,7 +174,7 @@
                <item row="3" column="0">
                 <widget class="QLabel" name="label_6">
                  <property name="text">
-                  <string> 校验位 </string>
+                  <string>校 验 位</string>
                  </property>
                 </widget>
                </item>
@@ -209,7 +212,7 @@
              </item>
             </layout>
            </widget>
-           <widget class="QWidget" name="page_2">
+           <widget class="QWidget" name="page_udp">
             <layout class="QVBoxLayout" name="verticalLayout_11">
              <property name="leftMargin">
               <number>0</number>
@@ -233,7 +236,11 @@
                 </widget>
                </item>
                <item row="0" column="1">
-                <widget class="QLineEdit" name="lineEdit_2"/>
+                <widget class="QLineEdit" name="le_UdpAimAddr">
+                 <property name="text">
+                  <string>192.168.1.3</string>
+                 </property>
+                </widget>
                </item>
                <item row="1" column="0">
                 <widget class="QLabel" name="label_8">
@@ -243,7 +250,11 @@
                 </widget>
                </item>
                <item row="1" column="1">
-                <widget class="QLineEdit" name="lineEdit_3"/>
+                <widget class="QLineEdit" name="le_UdpAimPort">
+                 <property name="text">
+                  <string>40000</string>
+                 </property>
+                </widget>
                </item>
                <item row="2" column="0">
                 <widget class="QLabel" name="label_9">
@@ -251,9 +262,6 @@
                   <string>本地地址</string>
                  </property>
                 </widget>
-               </item>
-               <item row="2" column="1">
-                <widget class="QLineEdit" name="lineEdit_4"/>
                </item>
                <item row="3" column="0">
                 <widget class="QLabel" name="label_10">
@@ -263,7 +271,14 @@
                 </widget>
                </item>
                <item row="3" column="1">
-                <widget class="QLineEdit" name="lineEdit_5"/>
+                <widget class="QLineEdit" name="le_UdpLocalPort">
+                 <property name="text">
+                  <string>20000</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QComboBox" name="cmb_UdpLocalAddr"/>
                </item>
               </layout>
              </item>
@@ -272,14 +287,208 @@
                <item>
                 <widget class="QPushButton" name="pushButton_6">
                  <property name="text">
-                  <string>PushButton</string>
+                  <string>保留</string>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QPushButton" name="pushButton_7">
+                <widget class="QPushButton" name="btn_UdpConnect">
                  <property name="text">
-                  <string>PushButton</string>
+                  <string>连接</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="page_tcpServer">
+            <layout class="QVBoxLayout" name="verticalLayout_17">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <layout class="QFormLayout" name="formLayout_3">
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_11">
+                 <property name="text">
+                  <string>远程地址</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_12">
+                 <property name="text">
+                  <string>远程端口</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QLineEdit" name="le_tcpServerAimPort">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="text">
+                  <string>0</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_13">
+                 <property name="text">
+                  <string>本地地址</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0">
+                <widget class="QLabel" name="label_14">
+                 <property name="text">
+                  <string>本地端口</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="1">
+                <widget class="QLineEdit" name="le_tcpServerLocalPort">
+                 <property name="text">
+                  <string>20000</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QComboBox" name="cmb_tcpServerLocalAddr"/>
+               </item>
+               <item row="0" column="1">
+                <widget class="QComboBox" name="cmb_tcpServerAimAddr">
+                 <item>
+                  <property name="text">
+                   <string>All Connect(0)</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_6">
+               <item>
+                <widget class="QPushButton" name="pushButton">
+                 <property name="text">
+                  <string>保留</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_Listen">
+                 <property name="text">
+                  <string>侦听</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="page_tcpClient">
+            <layout class="QVBoxLayout" name="verticalLayout_18">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <layout class="QFormLayout" name="formLayout_4">
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_15">
+                 <property name="text">
+                  <string>远程地址</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_16">
+                 <property name="text">
+                  <string>远程端口</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_17">
+                 <property name="text">
+                  <string>本地地址</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0">
+                <widget class="QLabel" name="label_18">
+                 <property name="text">
+                  <string>本地端口</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QLineEdit" name="le_tcpClientAimAddr">
+                 <property name="text">
+                  <string>192.168.1.3</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QLineEdit" name="le_tcpClientAimPort">
+                 <property name="text">
+                  <string>40000</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="1">
+                <widget class="QLineEdit" name="le_tcpClientLocalPort">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="text">
+                  <string>20000</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QComboBox" name="cmb_tcpClientLocalAddr"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_7">
+               <item>
+                <widget class="QPushButton" name="pushButton_3">
+                 <property name="text">
+                  <string>保留</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_TcpClientConnect">
+                 <property name="text">
+                  <string>连接</string>
                  </property>
                 </widget>
                </item>
@@ -384,6 +593,9 @@
            <property name="orientation">
             <enum>Qt::Vertical</enum>
            </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Expanding</enum>
+           </property>
            <property name="sizeHint" stdset="0">
             <size>
              <width>20</width>
@@ -469,7 +681,9 @@
              </item>
             </layout>
            </widget>
-           <widget class="QWidget" name="page_4"/>
+           <widget class="QWidget" name="page_4">
+            <layout class="QVBoxLayout" name="verticalLayout_16"/>
+           </widget>
           </widget>
          </item>
         </layout>
@@ -660,9 +874,27 @@
      <height>23</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>帮助</string>
+    </property>
+    <addaction name="action_version"/>
+   </widget>
+   <addaction name="menu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="action_version">
+   <property name="icon">
+    <iconset resource="MyImages.qrc">
+     <normaloff>:/MyImages/MyImages/versionInfo.png</normaloff>:/MyImages/MyImages/versionInfo.png</iconset>
+   </property>
+   <property name="text">
+    <string>版本更新说明</string>
+   </property>
+  </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="MyImages.qrc"/>
+ </resources>
  <connections/>
 </ui>

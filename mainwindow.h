@@ -20,9 +20,12 @@
 #include <QCheckBox>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QTableWidget>
 
-#include "abstractioservice.h"
 #include "serialioservice.h"
+#include "udpioservice.h"
+#include "tcpserverioservice.h"
+#include "tcpclientioservice.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -42,11 +45,22 @@ public:
         QPushButton *btn[2];
     };
 
+    enum ConnectMode{
+        Serial       = 0,
+        Udp          = 1,
+        TcpServer    = 2,
+        TcpClient    = 3,
+        None         = -1
+    };
+    Q_ENUM(ConnectMode)
+
     void loadSettings(QSettings*);
     void saveSettings(QSettings*);
     QString visualHex(const QByteArray &ba);
     void onAppendSendBytes(QByteArray Bytes);
     void multiSendInit();
+    void sendBytes(QByteArray);
+    void sendText(QCheckBox *checkHexBox,QString text);
 
     bool nativeEventFilter(const QByteArray &eventType, void *message, long *result);
 
@@ -92,6 +106,14 @@ private slots:
 
     void on_btn_RecvClear_clicked();
 
+    void on_action_version_triggered();
+
+    void on_btn_UdpConnect_clicked();
+
+    void on_btn_Listen_clicked();
+
+    void on_btn_TcpClientConnect_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -100,13 +122,19 @@ private:
     QString ConnectInfo;
     QLabel *lb_ConnectInfo;
     QLabel *lb_SendRecvInfo;
-    QSerialPort *serialPort;
     SerialIOService *serialIOService;
     QFile         receiveFile;
     QTextStream   receiveTextStream;
     QVector<Row> rows;
+    QUdpSocket   *udpSocket;
+    UdpIOService *udpIOService;
+    TcpServerIOService *tcpServerIOService;
+    QTcpSocket *tcpSocket;
+    TcpClientIOService *tcpClientIOService;
 
+    MainWindow::ConnectMode connectMode = None;
     uint32_t sendCount=0;
     uint32_t recvCount=0;
+    qint8    tcpServerConnectNum = 0;
 };
 #endif // MAINWINDOW_H
