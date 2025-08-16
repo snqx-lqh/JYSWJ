@@ -6,6 +6,11 @@ SerialIOService::SerialIOService(QObject *parent) : QObject(parent)
     connect(serialPort,&QSerialPort::readyRead,this,&SerialIOService::onReadReady);
 }
 
+SerialIOService::~SerialIOService()
+{
+    delete serialPort;
+}
+
 bool SerialIOService::openSerial()
 {
     int connect = serialPort->open(QSerialPort::ReadWrite);
@@ -13,10 +18,7 @@ bool SerialIOService::openSerial()
         qDebug() << "串口打开成功";
     }else{
         qDebug() << "串口打开失败";
-        QMessageBox msg;
-        msg.setText("串口打开失败");
-        msg.show();
-        msg.exec();
+        QMessageBox::warning(nullptr,"串口打开提示","串口打开失败！！！");
     }
     return connect;
 }
@@ -37,9 +39,9 @@ void SerialIOService::sendBytes(QByteArray bytes)
     emit sendBytesCount(bytes.length());
 }
 
-void SerialIOService::sendFile(QString fileName)
+void SerialIOService::sendFile(QString filePath)
 {
-    QFile file(fileName);
+    QFile file(filePath);
     if(!file.open(QIODevice::ReadOnly)){
         qDebug()<<"文件无法读取";
     }
@@ -66,28 +68,95 @@ void SerialIOService::scanAvailableSerialPort(QComboBox *cmb)
     }
 }
 
-void SerialIOService::addBaudItems(QComboBox *cmb)
+void SerialIOService::addCommonBaudItem(QComboBox *cmb)
 {
     cmb->clear();
-    QStringList serialBaudString;
-    serialBaudString << "110" << "300" << "600" << "1200" << "2400" << "4800" << "9600"
-                     << "14400" << "19200" << "38400" << "57600" << "76800" << "115200" << "128000"
-                     << "230400" << "256000" << "460800" << "921600" << "1000000" << "2000000" << "3000000"
-                        ;
-    cmb->addItems(serialBaudString);
+    if(serialBaudList.isEmpty()){
+        serialBaudList << "110"    << "300"    << "600"    << "1200"   << "2400"    << "4800"    << "9600"
+                       << "14400"  << "19200"  << "38400"  << "57600"  << "76800"   << "115200"  << "128000"
+                       << "230400" << "256000" << "460800" << "921600" << "1000000" << "2000000" << "3000000";
+    }
+    cmb->addItems(serialBaudList);
 }
 
-void SerialIOService::setPortName(QString portName)
+void SerialIOService::addCustomBaudItem(QComboBox *cmb, QString serialBaud, bool sortFlag)
+{
+    serialBaudList<<serialBaud;
+    cmb->addItem(serialBaud);
+
+    if(sortFlag){
+        QList<qint32> list_baud;
+        for(int i=0;i<cmb->count();i++){
+            list_baud<<cmb->itemText(i).toUInt();
+        }
+        std::sort(list_baud.begin(),list_baud.end());
+        QStringList strs;
+        strs.reserve(list_baud.size());
+        for(qint32 n:list_baud) strs<<QString::number(n);
+        cmb->clear();
+        cmb->addItems(strs);
+    }
+    cmb->setCurrentText(serialBaud);
+}
+
+void SerialIOService::delCustomBaudItem(QComboBox *cmb, int index, bool sortFlag)
+{
+    serialBaudList.removeAt(index);
+    cmb->removeItem(index);
+
+    if(sortFlag){
+        QList<qint32> list_baud;
+        for(int i=0;i<cmb->count();i++){
+            list_baud<<cmb->itemText(i).toUInt();
+        }
+        std::sort(list_baud.begin(),list_baud.end());
+        QStringList strs;
+        strs.reserve(list_baud.size());
+        for(qint32 n:list_baud) strs<<QString::number(n);
+        cmb->clear();
+        cmb->addItems(strs);
+    }
+}
+
+void SerialIOService::updateBaudItem(QComboBox *cmb)
+{
+    QString serialBaud = getSerialBaudRate();
+    cmb->clear();
+    cmb->addItems(serialBaudList);
+    cmb->setCurrentText(serialBaud);
+}
+
+void SerialIOService::loadSettings()
+{
+    QDir dir(QCoreApplication::applicationDirPath());
+    QSettings settings(dir.filePath("settings.ini"),QSettings::IniFormat);
+
+    settings.beginGroup("serialWork");
+    serialBaudList = settings.value("serialBaudList").toStringList();
+    settings.endGroup();
+}
+
+void SerialIOService::saveSettings()
+{
+    QDir dir(QCoreApplication::applicationDirPath());
+    QSettings settings(dir.filePath("settings.ini"),QSettings::IniFormat);
+
+    settings.beginGroup("serialWork");
+    settings.setValue("serialBaudList", serialBaudList);
+    settings.endGroup();
+}
+
+void SerialIOService::setSerialPortName(QString portName)
 {
     serialPort->setPortName(portName);
 }
 
-void SerialIOService::setBaudRate(QString baudRate)
+void SerialIOService::setSerialBaudRate(QString baudRate)
 {
     serialPort->setBaudRate(baudRate.toUInt());
 }
 
-void SerialIOService::setStopBits(QString stopBits)
+void SerialIOService::setSerialStopBits(QString stopBits)
 {
     uint8_t openFlag = 0;
     if (serialPort->isOpen()){
@@ -101,7 +170,7 @@ void SerialIOService::setStopBits(QString stopBits)
     if(openFlag == 1) serialPort->open(QSerialPort::ReadWrite);
 }
 
-void SerialIOService::setDataBits(QString dataBits)
+void SerialIOService::setSerialDataBits(QString dataBits)
 {
     uint8_t openFlag = 0;
     if (serialPort->isOpen()){
@@ -115,7 +184,7 @@ void SerialIOService::setDataBits(QString dataBits)
     if(openFlag == 1) serialPort->open(QSerialPort::ReadWrite);
 }
 
-void SerialIOService::setParity(QString parity)
+void SerialIOService::setSerialParity(QString parity)
 {
     uint8_t openFlag = 0;
     if (serialPort->isOpen()){
@@ -128,7 +197,58 @@ void SerialIOService::setParity(QString parity)
     if(openFlag == 1) serialPort->open(QSerialPort::ReadWrite);
 }
 
-QString SerialIOService::getConnectInfo()
+QString SerialIOService::getSerialPortName()
+{
+    return serialPort->portName();
+}
+
+QString SerialIOService::getSerialBaudRate()
+{
+    return QString::number(serialPort->baudRate());
+}
+
+QString SerialIOService::getSerialStopBits()
+{
+    QString dataBitsStr = "";
+    QSerialPort::DataBits dataBits = serialPort->dataBits();
+    if (dataBits == QSerialPort::Data8)      dataBitsStr = "8";
+    else if(dataBits == QSerialPort::Data7)  dataBitsStr = "7";
+    else if(dataBits == QSerialPort::Data6)  dataBitsStr = "6";
+    else if(dataBits == QSerialPort::Data5)  dataBitsStr = "5";
+    return dataBitsStr;
+}
+
+QString SerialIOService::getSerialDataBits()
+{
+    QString stopBitsStr = "";
+    QSerialPort::StopBits stopBits = serialPort->stopBits();
+    if (stopBits == QSerialPort::OneStop) stopBitsStr = "1";
+    else if(stopBits == QSerialPort::OneAndHalfStop)  stopBitsStr = "1.5";
+    else if(stopBits == QSerialPort::TwoStop) stopBitsStr = "2";
+    return stopBitsStr;
+}
+
+QString SerialIOService::getSerialParity()
+{
+    QString parityStr = "";
+    QSerialPort::Parity parity = serialPort->parity();
+    if (parity == QSerialPort::NoParity)       parityStr = "None";
+    else if(parity == QSerialPort::OddParity)  parityStr = "Odd";
+    else if(parity == QSerialPort::EvenParity) parityStr = "Even";
+    return parityStr;
+}
+
+QString SerialIOService::getSerialFlowControl()
+{
+    QString flowControlStr = "";
+    QSerialPort::FlowControl flowControl = serialPort->flowControl();
+    if (flowControl == QSerialPort::NoFlowControl)  flowControlStr = "None";
+    else if(flowControl == QSerialPort::HardwareControl)  flowControlStr = "Hardware";
+    else if(flowControl == QSerialPort::SoftwareControl)  flowControlStr = "Software";
+    return flowControlStr;
+}
+
+QString SerialIOService::getSerialConnectInfo()
 {
     QString infoStr = "";
     infoStr += serialPort->portName() + ",";
@@ -146,15 +266,14 @@ QString SerialIOService::getConnectInfo()
     else if(stopBits == QSerialPort::TwoStop)  infoStr += "2,";
 
     QSerialPort::Parity parity = serialPort->parity();
-    if (parity == QSerialPort::NoParity)       infoStr += "None";
-    else if(parity == QSerialPort::OddParity)  infoStr += "Odd";
-    else if(parity == QSerialPort::EvenParity) infoStr += "Even";
+    if (parity == QSerialPort::NoParity)       infoStr += "None,";
+    else if(parity == QSerialPort::OddParity)  infoStr += "Odd,";
+    else if(parity == QSerialPort::EvenParity) infoStr += "Even,";
 
-//    QSerialPort::FlowControl flowControl = serialPort->flowControl();
-
-//    if (flowControl == QSerialPort::NoFlowControl)  infoStr += "NoFlow";
-//    else if(flowControl == QSerialPort::HardwareControl)  infoStr += "Hardware";
-//    else if(flowControl == QSerialPort::SoftwareControl)  infoStr += "Software";
+    QSerialPort::FlowControl flowControl = serialPort->flowControl();
+    if (flowControl == QSerialPort::NoFlowControl)  infoStr += "None";
+    else if(flowControl == QSerialPort::HardwareControl)  infoStr += "Hardware";
+    else if(flowControl == QSerialPort::SoftwareControl)  infoStr += "Software";
 
     return infoStr;
 }

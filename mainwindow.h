@@ -21,11 +21,15 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QTableWidget>
+#include <QStringList>
 
 #include "serialioservice.h"
 #include "udpioservice.h"
 #include "tcpserverioservice.h"
 #include "tcpclientioservice.h"
+#include "qcustomplot.h"
+#include "waveshow.h"
+#include <QVector>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -63,12 +67,13 @@ public:
     void sendText(QCheckBox *checkHexBox,QString text);
 
     bool nativeEventFilter(const QByteArray &eventType, void *message, long *result);
-
+    QStringList parseSerialData(const QByteArray &raw);
 public slots:
 
     void onReadBytes(QByteArray);
     void onSendCountChanged(uint32_t count);
     void onRecvCountChanged(uint32_t count);
+
 protected:
     void closeEvent(QCloseEvent *event);
 
@@ -114,6 +119,14 @@ private slots:
 
     void on_btn_TcpClientConnect_clicked();
 
+    void on_btn_CH1_clicked();
+
+    void on_btn_CH2_clicked();
+
+    void on_btn_CH3_clicked();
+
+    void on_btn_CH4_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -136,5 +149,10 @@ private:
     uint32_t sendCount=0;
     uint32_t recvCount=0;
     qint8    tcpServerConnectNum = 0;
+    qint32   x_num=0;
+
+    WaveShow *waveShow;
+
+    QVector<bool> ChannelEnable;
 };
 #endif // MAINWINDOW_H

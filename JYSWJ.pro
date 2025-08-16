@@ -1,4 +1,4 @@
-QT       += core gui serialport network
+QT       += core gui serialport network printsupport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -8,7 +8,7 @@ CONFIG += c++11
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-DEFINES += APPVERSION=\\\"V1.0.2\\\"
+DEFINES += APPVERSION=\\\"V1.0.3\\\"
 
 RC_ICONS = JYSWJ.ico
 
@@ -24,6 +24,9 @@ FORMS += \
 
 INCLUDEPATH += $$PWD/DeviceIOService
 include($$PWD/DeviceIOService/DeviceIOService.pri)
+
+INCLUDEPATH += $$PWD/GraphShow
+include($$PWD/GraphShow/GraphShow.pri)
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

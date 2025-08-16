@@ -27,18 +27,17 @@ MainWindow::MainWindow(QWidget *parent)
     // 创建串口相关服务
     serialIOService = new SerialIOService();
     serialIOService->scanAvailableSerialPort(ui->cmb_PortName);
-    serialIOService->addBaudItems(ui->cmb_BaudRate);
+    serialIOService->addCommonBaudItem(ui->cmb_BaudRate);
     ui->cmb_PortName->addItem("UDP");
     ui->cmb_PortName->addItem("TCPServer");
     ui->cmb_PortName->addItem("TCPClient");
 
     // 获得串口信息
-    lb_ConnectInfo->setText(serialIOService->getConnectInfo());
+    lb_ConnectInfo->setText(serialIOService->getSerialConnectInfo());
 
     connect(serialIOService,&SerialIOService::readBytes,this,&MainWindow::onReadBytes);
     connect(serialIOService,&SerialIOService::sendBytesCount,this,&MainWindow::onSendCountChanged);
     connect(serialIOService,&SerialIOService::recvBytesCount,this,&MainWindow::onRecvCountChanged);
-
 
     // 多字节发送界面初始化
     multiSendInit();
@@ -70,7 +69,6 @@ MainWindow::MainWindow(QWidget *parent)
         }
     });
 
-
     tcpClientIOService = new TcpClientIOService();
     tcpClientIOService->scanLocalAvlidAddr(ui->cmb_tcpClientLocalAddr);
     connect(tcpClientIOService,&TcpClientIOService::readBytes,this,&MainWindow::onReadBytes);
@@ -78,9 +76,17 @@ MainWindow::MainWindow(QWidget *parent)
         ui->le_tcpClientLocalPort->setText(QString::number(port));
     });
 
+    //隐藏波形显示
+    //ui->rB_WaveShow->setVisible(false);
+
     loadSettings(settings);
 
     qApp->installNativeEventFilter(this);
+
+    ChannelEnable.resize(4);
+    ChannelEnable.fill(true, 4);
+
+    waveShow = new WaveShow(ui->widget_WaveShow);
 }
 
 MainWindow::~MainWindow()
@@ -88,25 +94,27 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+
+
 void MainWindow::loadSettings(QSettings *settings)
 {
     settings->beginGroup("MainWindow");
-    auto serialPortName = settings->value("SerialPort","");
-    auto serialBaud     = settings->value("SerialBaud","115200");
+    auto serialPortName        = settings->value("SerialPort","");
+    auto serialBaud            = settings->value("SerialBaud","115200");
     auto cb_AddTimeStamp_state = settings->value("cb_AddTimeStamp","false");
-    auto cb_RecvHexShow_state = settings->value("cb_RecvHexShow","false");
-    auto cb_SendNewLine_state = settings->value("cb_SendNewLine","false");
-    auto cb_SendByHex_state = settings->value("cb_SendByHex","false");
+    auto cb_RecvHexShow_state  = settings->value("cb_RecvHexShow","false");
+    auto cb_SendNewLine_state  = settings->value("cb_SendNewLine","false");
+    auto cb_SendByHex_state    = settings->value("cb_SendByHex","false");
     auto cb_SendFeedback_state = settings->value("cb_SendFeedback","false");
-    auto sendAreaStr = settings->value("sendAreaStr","");
-    auto tcpClientLocalAddr = settings->value("tcpClientLocalAddr","");
-    auto tcpServerLocalAddr = settings->value("tcpServerLocalAddr","");
-    auto udpLocalAddr = settings->value("udpLocalAddr","");
+    auto sendAreaStr           = settings->value("sendAreaStr","");
+    auto tcpClientLocalAddr    = settings->value("tcpClientLocalAddr","");
+    auto tcpServerLocalAddr    = settings->value("tcpServerLocalAddr","");
+    auto udpLocalAddr          = settings->value("udpLocalAddr","");
 
     ui->cmb_PortName->setCurrentText(serialPortName.toString());
-    serialIOService->setPortName(serialPortName.toString());
+    serialIOService->setSerialPortName(serialPortName.toString());
     ui->cmb_BaudRate->setCurrentText(serialBaud.toString());
-    serialIOService->setBaudRate(serialBaud.toString());
+    serialIOService->setSerialBaudRate(serialBaud.toString());
     ui->cb_AddTimeStamp->setChecked(cb_AddTimeStamp_state.toBool());
     ui->cb_RecvHexShow->setChecked(cb_RecvHexShow_state.toBool());
     ui->cb_SendNewLine->setChecked(cb_SendNewLine_state.toBool());
@@ -152,6 +160,48 @@ QString MainWindow::visualHex(const QByteArray &ba)
     return out;
 }
 
+// 解析串口数据，提取逗号分隔的数字
+// 在MainWindow类中实现的串口数据解析函数
+QStringList MainWindow::parseSerialData(const QByteArray &raw)
+{
+    QStringList result;
+
+    // 将QByteArray转换为QString以便处理
+    QString data = QString::fromUtf8(raw);
+
+    // 移除可能的回车换行符
+    data = data.trimmed();
+
+    // 检查输入是否为空
+    if (data.isEmpty()) {
+        return result;
+    }
+
+    // 查找*的位置，分离数据部分和校验位
+    int starIndex = data.indexOf('*');
+    QString dataPart;
+
+    if (starIndex != -1) {
+        // 提取*之前的部分
+        dataPart = data.left(starIndex);
+    } else {
+        // 如果没有*，使用整个字符串
+        dataPart = data;
+    }
+
+    // 按逗号分割数据
+    QStringList parts = dataPart.split(',');
+
+    // 过滤掉空字符串
+    foreach (const QString &part, parts) {
+        if (!part.isEmpty()) {
+            result.append(part);
+        }
+    }
+
+    return result;
+}
+
 // 读取串口数据后的处理
 void MainWindow::onReadBytes(QByteArray bytes)
 {
@@ -167,6 +217,24 @@ void MainWindow::onReadBytes(QByteArray bytes)
         //receiveTextStream<<bytes;
         receiveFile.write(bytes);
     }
+
+    //解析字符串到波形中
+    QStringList list = parseSerialData(bytes);
+
+    for(int i = 0;i<ChannelEnable.count();i++)
+    {
+        QString Y_DATA = list[i+1];
+        //qDebug()<<"Y_DATA:"<<Y_DATA;
+        switch (i) {
+            case 0:ui->label_ch1->setText(Y_DATA);break;
+            case 1:ui->label_ch2->setText(Y_DATA);break;
+            case 2:ui->label_ch3->setText(Y_DATA);break;
+            case 3:ui->label_ch4->setText(Y_DATA);break;
+        default: break;
+        }
+        waveShow->addData(i,x_num,Y_DATA.toDouble());
+    }
+    x_num++;
 }
 
 void MainWindow::onSendCountChanged(uint32_t count)
@@ -195,13 +263,19 @@ void MainWindow::on_btn_OpenSerial_clicked()
         serialIOService->closeSerial();
         ui->cmb_PortName->setEnabled(true);
         ui->cmb_BaudRate->setEnabled(true);
+        ui->cmb_DataBits->setEnabled(true);
+        ui->cmb_StopBits->setEnabled(true);
+        ui->cmb_Parity->setEnabled(true);
         ui->btn_OpenSerial->setText("打开串口");
     }else{
-        serialIOService->setPortName(ui->cmb_PortName->currentText());
-        serialIOService->setBaudRate(ui->cmb_BaudRate->currentText());
+        serialIOService->setSerialPortName(ui->cmb_PortName->currentText());
+        serialIOService->setSerialBaudRate(ui->cmb_BaudRate->currentText());
         if(!serialIOService->openSerial()) return;
         ui->cmb_PortName->setEnabled(false);
         ui->cmb_BaudRate->setEnabled(false);
+        ui->cmb_DataBits->setEnabled(false);
+        ui->cmb_StopBits->setEnabled(false);
+        ui->cmb_Parity->setEnabled(false);
         ui->btn_OpenSerial->setText("关闭串口");
     }
 }
@@ -222,8 +296,8 @@ void MainWindow::on_cmb_PortName_currentTextChanged(const QString &arg1)
         connectMode = MainWindow::Udp;
     }else{
         ui->stackedWidget_Port->setCurrentIndex(0);
-        serialIOService->setPortName(arg1);
-        lb_ConnectInfo->setText(serialIOService->getConnectInfo());
+        serialIOService->setSerialPortName(arg1);
+        lb_ConnectInfo->setText(serialIOService->getSerialConnectInfo());
         connectMode = MainWindow::Serial;
     }
 }
@@ -233,8 +307,8 @@ void MainWindow::on_cmb_BaudRate_currentTextChanged(const QString &arg1)
 {
     if(connectMode == MainWindow::Serial)
     {
-        serialIOService->setBaudRate(arg1);
-        lb_ConnectInfo->setText(serialIOService->getConnectInfo());
+        serialIOService->setSerialBaudRate(arg1);
+        lb_ConnectInfo->setText(serialIOService->getSerialConnectInfo());
     }
 }
 
@@ -433,22 +507,22 @@ void MainWindow::on_rB_WaveShow_clicked()
 
 void MainWindow::on_cmb_StopBits_currentTextChanged(const QString &arg1)
 {
-    serialIOService->setStopBits(arg1);
-    if(connectMode == MainWindow::Serial) lb_ConnectInfo->setText(serialIOService->getConnectInfo());
+    serialIOService->setSerialStopBits(arg1);
+    if(connectMode == MainWindow::Serial) lb_ConnectInfo->setText(serialIOService->getSerialConnectInfo());
 }
 
 
 void MainWindow::on_cmb_DataBits_currentTextChanged(const QString &arg1)
 {
-    serialIOService->setDataBits(arg1);
-    if(connectMode == MainWindow::Serial) lb_ConnectInfo->setText(serialIOService->getConnectInfo());
+    serialIOService->setSerialDataBits(arg1);
+    if(connectMode == MainWindow::Serial) lb_ConnectInfo->setText(serialIOService->getSerialConnectInfo());
 
 }
 
 void MainWindow::on_cmb_Parity_currentTextChanged(const QString &arg1)
 {
-    serialIOService->setParity(arg1);
-    if(connectMode == MainWindow::Serial) lb_ConnectInfo->setText(serialIOService->getConnectInfo());
+    serialIOService->setSerialParity(arg1);
+    if(connectMode == MainWindow::Serial) lb_ConnectInfo->setText(serialIOService->getSerialConnectInfo());
 }
 
 
@@ -465,6 +539,13 @@ void MainWindow::on_btn_RecvClear_clicked()
     ui->textBrowser_recv->clear();
     recvCount = 0;
     lb_SendRecvInfo->setText(QString("发送：%1 接收：%2").arg(sendCount, 8).arg(recvCount, 8));
+
+    x_num = 0;
+    waveShow->cleanData();
+    ui->label_ch1->setText("0");
+    ui->label_ch2->setText("0");
+    ui->label_ch3->setText("0");
+    ui->label_ch4->setText("0");
 }
 
 
@@ -507,7 +588,6 @@ void MainWindow::on_btn_Listen_clicked()
         ui->cmb_PortName->setEnabled(false);
         ui->cmb_tcpServerLocalAddr->setEnabled(false);
         ui->le_tcpServerLocalPort->setEnabled(false);
-
     }else{
         tcpServerIOService->stopServer();
         ui->btn_Listen->setText("侦听");
@@ -524,10 +604,8 @@ void MainWindow::on_btn_TcpClientConnect_clicked()
     if(ui->btn_TcpClientConnect->text()=="连接"){
         if(!tcpClientIOService->connectServer(ui->le_tcpClientAimAddr->text(),ui->le_tcpClientAimPort->text().toUInt()))
         {
-            QMessageBox msg;
-            msg.setText("Tcp Client Connect failed");
-            msg.exec();
-            return;
+            QMessageBox::warning(nullptr,"TCP警告提示","TCP Client Connect failed");
+            return ;
         }
         ui->btn_TcpClientConnect->setText("断开");
         ui->cmb_PortName->setEnabled(false);
@@ -543,4 +621,174 @@ void MainWindow::on_btn_TcpClientConnect_clicked()
         ui->cmb_tcpClientLocalAddr->setEnabled(true);
     }
 }
+
+
+void MainWindow::on_btn_CH1_clicked()
+{
+    if(ChannelEnable[0] == false){
+
+        ChannelEnable[0] = true;
+        ui->btn_CH1->setStyleSheet(
+            "QPushButton {"
+            "  background-color: rgb(0, 170, 255);"
+            "  border-radius:8px; "
+            "  border:1px solid #606060; "
+            "  padding:4px; "
+            "}");
+        ui->label_ch1->setStyleSheet(
+                    "QLabel {"
+                    "  background-color: rgb(0, 170, 255);"
+                    "  border-radius:8px; "
+                    "  border:1px solid #606060; "
+                    "  padding:4px; "
+                    "}");
+        qDebug()<<ChannelEnable[0];
+    }else{
+        ChannelEnable[0] = false;
+        ui->btn_CH1->setStyleSheet(
+            "QPushButton {"
+            "  background-color:rgb(255, 255, 255);"
+            "  border-radius:8px; "
+            "  border:1px solid #606060; "
+            "  padding:4px; "
+            "}");
+        ui->label_ch1->setStyleSheet(
+                    "QLabel {"
+                    "  background-color:rgb(255, 255, 255);"
+                    "  border-radius:8px; "
+                    "  border:1px solid #606060; "
+                    "  padding:4px; "
+                    "}");
+        qDebug()<<ChannelEnable[0];
+    }
+    waveShow->setLineVisible(0,ChannelEnable[0]);
+}
+
+
+void MainWindow::on_btn_CH2_clicked()
+{
+    if(ChannelEnable[1] == false){
+
+        ChannelEnable[1] = true;
+        ui->btn_CH2->setStyleSheet(
+            "QPushButton {"
+            "  background-color: rgb(255, 85, 0);"
+            "  border-radius:8px; "
+            "  border:1px solid #606060; "
+            "  padding:4px; "
+            "}");
+        ui->label_ch2->setStyleSheet(
+                    "QLabel {"
+                    "  background-color: rgb(255, 85, 0);"
+                    "  border-radius:8px; "
+                    "  border:1px solid #606060; "
+                    "  padding:4px; "
+                    "}");
+        qDebug()<<ChannelEnable[1];
+    }else{
+        ChannelEnable[1] = false;
+        ui->btn_CH2->setStyleSheet(
+            "QPushButton {"
+            "  background-color:rgb(255, 255, 255);"
+            "  border-radius:8px; "
+            "  border:1px solid #606060; "
+            "  padding:4px; "
+            "}");
+        ui->label_ch2->setStyleSheet(
+                    "QLabel {"
+                    "  background-color:rgb(255, 255, 255);"
+                    "  border-radius:8px; "
+                    "  border:1px solid #606060; "
+                    "  padding:4px; "
+                    "}");
+        qDebug()<<ChannelEnable[1];
+    }
+    waveShow->setLineVisible(1,ChannelEnable[1]);
+}
+
+
+void MainWindow::on_btn_CH3_clicked()
+{
+    if(ChannelEnable[2] == false){
+
+        ChannelEnable[2] = true;
+        ui->btn_CH3->setStyleSheet(
+            "QPushButton {"
+            "  background-color: rgb(85, 255, 0);"
+            "  border-radius:8px; "
+            "  border:1px solid #606060; "
+            "  padding:4px; "
+            "}");
+        ui->label_ch3->setStyleSheet(
+                    "QLabel {"
+                    "  background-color: rgb(85, 255, 0);"
+                    "  border-radius:8px; "
+                    "  border:1px solid #606060; "
+                    "  padding:4px; "
+                    "}");
+        qDebug()<<ChannelEnable[2];
+    }else{
+        ChannelEnable[2] = false;
+        ui->btn_CH3->setStyleSheet(
+            "QPushButton {"
+            "  background-color:rgb(255, 255, 255);"
+            "  border-radius:8px; "
+            "  border:1px solid #606060; "
+            "  padding:4px; "
+            "}");
+        ui->label_ch3->setStyleSheet(
+                    "QLabel {"
+                    "  background-color:rgb(255, 255, 255);"
+                    "  border-radius:8px; "
+                    "  border:1px solid #606060; "
+                    "  padding:4px; "
+                    "}");
+        qDebug()<<ChannelEnable[2];
+    }
+    waveShow->setLineVisible(2,ChannelEnable[2]);
+}
+
+
+void MainWindow::on_btn_CH4_clicked()
+{
+    if(ChannelEnable[3] == false){
+
+        ChannelEnable[3] = true;
+        ui->btn_CH4->setStyleSheet(
+            "QPushButton {"
+            "  background-color: rgb(0, 255, 255);"
+            "  border-radius:8px; "
+            "  border:1px solid #606060; "
+            "  padding:4px; "
+            "}");
+        ui->label_ch4->setStyleSheet(
+                    "QLabel {"
+                    "  background-color: rgb(0, 255, 255);"
+                    "  border-radius:8px; "
+                    "  border:1px solid #606060; "
+                    "  padding:4px; "
+                    "}");
+        qDebug()<<ChannelEnable[3];
+    }else{
+        ChannelEnable[3] = false;
+        ui->btn_CH4->setStyleSheet(
+            "QPushButton {"
+            "  background-color:rgb(255, 255, 255);"
+            "  border-radius:8px; "
+            "  border:1px solid #606060; "
+            "  padding:4px; "
+            "}");
+        ui->label_ch4->setStyleSheet(
+                    "QLabel {"
+                    "  background-color:rgb(255, 255, 255);"
+                    "  border-radius:8px; "
+                    "  border:1px solid #606060; "
+                    "  padding:4px; "
+                    "}");
+        qDebug()<<ChannelEnable[3];
+    }
+    waveShow->setLineVisible(3,ChannelEnable[3]);
+}
+
+
 
