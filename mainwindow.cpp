@@ -87,14 +87,25 @@ MainWindow::MainWindow(QWidget *parent)
     ChannelEnable.fill(true, 4);
 
     waveShow = new WaveShow(ui->widget_WaveShow);
+    connect(waveShow,&WaveShow::vLineValue,this,[this](QStringList strList){
+        ui->label_ch1->setText(strList[0]);
+        ui->label_ch2->setText(strList[1]);
+        ui->label_ch3->setText(strList[2]);
+        ui->label_ch4->setText(strList[3]);
+    });
+
+    MultiSendCycleTimer = new QTimer;
+    connect(MultiSendCycleTimer,SIGNAL(timeout()),this,SLOT(onMultiSendCycleTimerOut()));
+    SendCycleTimer = new QTimer;
+    connect(SendCycleTimer,&QTimer::timeout,this,[this](){
+        sendText(ui->cb_SendByHex,ui->plainTextEdit_send->toPlainText());
+    });
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
 }
-
-
 
 void MainWindow::loadSettings(QSettings *settings)
 {
@@ -126,6 +137,16 @@ void MainWindow::loadSettings(QSettings *settings)
     ui->cmb_UdpLocalAddr->setCurrentText(udpLocalAddr.toString());
 
     settings->endGroup();
+
+    settings->beginGroup("MultiSendItems");
+    for (int i = 0; i < MultiSendItems.size() && i < mulSendItemMaxNum; ++i) {
+        auto &it = MultiSendItems[i];
+        it.check->setChecked(settings->value(QString("%1/check").arg(i), false).toBool());
+        it.edit->setText(settings->value(QString("%1/edit").arg(i), "").toString());
+        it.indexEdit->setText(settings->value(QString("%1/indexEdit").arg(i), 0).toString());
+        it.timerEdit->setText(settings->value(QString("%1/timerEdit").arg(i), 1000).toString());
+    }
+    settings->endGroup();
 }
 
 void MainWindow::saveSettings(QSettings *settings)
@@ -142,7 +163,17 @@ void MainWindow::saveSettings(QSettings *settings)
     settings->setValue("tcpClientLocalAddr",ui->cmb_tcpClientLocalAddr->currentText());
     settings->setValue("tcpServerLocalAddr",ui->cmb_tcpServerLocalAddr->currentText());
     settings->setValue("udpLocalAddr",ui->cmb_UdpLocalAddr->currentText());
+    settings->endGroup();
 
+    settings->beginGroup("MultiSendItems");
+    settings->remove("");                    // 先清旧数据
+    for (int i = 0; i < MultiSendItems.size(); ++i) {
+        const auto &it = MultiSendItems[i];
+        settings->setValue(QString("%1/check").arg(i), it.check->isChecked());
+        settings->setValue(QString("%1/edit").arg(i),    it.edit->text());
+        settings->setValue(QString("%1/indexEdit").arg(i),  it.indexEdit->text().toInt());
+        settings->setValue(QString("%1/timerEdit").arg(i),  it.timerEdit->text().toInt());
+    }
     settings->endGroup();
 }
 
@@ -220,18 +251,11 @@ void MainWindow::onReadBytes(QByteArray bytes)
 
     //解析字符串到波形中
     QStringList list = parseSerialData(bytes);
-
-    for(int i = 0;i<ChannelEnable.count();i++)
+    if(list[0]!="$WAVE") return;
+    for(int i = 0;i<list.count();i++)
     {
+        if (i > 3) continue;
         QString Y_DATA = list[i+1];
-        //qDebug()<<"Y_DATA:"<<Y_DATA;
-        switch (i) {
-            case 0:ui->label_ch1->setText(Y_DATA);break;
-            case 1:ui->label_ch2->setText(Y_DATA);break;
-            case 2:ui->label_ch3->setText(Y_DATA);break;
-            case 3:ui->label_ch4->setText(Y_DATA);break;
-        default: break;
-        }
         waveShow->addData(i,x_num,Y_DATA.toDouble());
     }
     x_num++;
@@ -330,35 +354,29 @@ void MainWindow::onAppendSendBytes(QByteArray Bytes)
 // 多字符发送模式
 void MainWindow::multiSendInit()
 {
-    for (int i = 0; i < 20; ++i) {
-        Row row;
+    for (int i = 0; i < mulSendItemMaxNum; ++i) {
+        MultiSendItem item;
 
-        row.check[0] = new QCheckBox();
-        row.edit[0]  = new QLineEdit;
-        row.btn[0]   = new QPushButton(QString("%1").arg(i + 1));
-        row.check[1] = new QCheckBox();
-        row.edit[1]  = new QLineEdit;
-        row.btn[1]   = new QPushButton(QString("%1").arg(i + 1 + 20));
+        item.itemIndex = i;
+        item.check = new QCheckBox();
+        item.edit = new QLineEdit();
+        item.btn = new QPushButton(QString("%1").arg(i));
+        item.btn->setProperty("row", i);
+        item.indexEdit = new QLineEdit(QString("0"));
+        item.indexEdit->setMaximumWidth(20);
+        item.timerEdit = new QLineEdit(QString("1000"));
+        item.timerEdit->setMaximumWidth(40);
+        ui->gridLayout->addWidget(item.check,     i/2 , ( i%2 ) ? 5 : 0);
+        ui->gridLayout->addWidget(item.edit,      i/2 , ( i%2 ) ? 6 : 1);
+        ui->gridLayout->addWidget(item.btn,       i/2 , ( i%2 ) ? 7 : 2);
+        ui->gridLayout->addWidget(item.indexEdit, i/2 , ( i%2 ) ? 8 : 3);
+        ui->gridLayout->addWidget(item.timerEdit, i/2 , ( i%2 ) ? 9 : 4);
 
-        // 把行号存到按钮里，方便后面知道是哪一行
-        row.btn[0]->setProperty("row", i);
-        row.btn[1]->setProperty("row", i + 20);
-
-        ui->gridLayout->addWidget(row.check[0], i, 0);
-        ui->gridLayout->addWidget(row.edit[0],  i, 1);
-        ui->gridLayout->addWidget(row.btn[0],   i, 2);
-        ui->gridLayout->addWidget(row.check[1], i, 3);
-        ui->gridLayout->addWidget(row.edit[1],  i, 4);
-        ui->gridLayout->addWidget(row.btn[1],   i, 5);
-
-        rows.append(row);
-
-        connect(row.btn[0], &QPushButton::clicked, this, [this, row]() {
-            sendText(row.check[0],row.edit[0]->text());
+        connect(item.btn, &QPushButton::clicked, this, [this, item]() {
+            sendText(item.check,item.edit->text());
         });
-        connect(row.btn[1], &QPushButton::clicked, this, [this, row]() {
-            sendText(row.check[1],row.edit[1]->text());
-        });
+
+        MultiSendItems.append(item);
     }
 }
 
@@ -642,7 +660,6 @@ void MainWindow::on_btn_CH1_clicked()
                     "  border:1px solid #606060; "
                     "  padding:4px; "
                     "}");
-        qDebug()<<ChannelEnable[0];
     }else{
         ChannelEnable[0] = false;
         ui->btn_CH1->setStyleSheet(
@@ -659,7 +676,6 @@ void MainWindow::on_btn_CH1_clicked()
                     "  border:1px solid #606060; "
                     "  padding:4px; "
                     "}");
-        qDebug()<<ChannelEnable[0];
     }
     waveShow->setLineVisible(0,ChannelEnable[0]);
 }
@@ -684,7 +700,6 @@ void MainWindow::on_btn_CH2_clicked()
                     "  border:1px solid #606060; "
                     "  padding:4px; "
                     "}");
-        qDebug()<<ChannelEnable[1];
     }else{
         ChannelEnable[1] = false;
         ui->btn_CH2->setStyleSheet(
@@ -701,7 +716,6 @@ void MainWindow::on_btn_CH2_clicked()
                     "  border:1px solid #606060; "
                     "  padding:4px; "
                     "}");
-        qDebug()<<ChannelEnable[1];
     }
     waveShow->setLineVisible(1,ChannelEnable[1]);
 }
@@ -726,7 +740,6 @@ void MainWindow::on_btn_CH3_clicked()
                     "  border:1px solid #606060; "
                     "  padding:4px; "
                     "}");
-        qDebug()<<ChannelEnable[2];
     }else{
         ChannelEnable[2] = false;
         ui->btn_CH3->setStyleSheet(
@@ -743,7 +756,6 @@ void MainWindow::on_btn_CH3_clicked()
                     "  border:1px solid #606060; "
                     "  padding:4px; "
                     "}");
-        qDebug()<<ChannelEnable[2];
     }
     waveShow->setLineVisible(2,ChannelEnable[2]);
 }
@@ -768,7 +780,6 @@ void MainWindow::on_btn_CH4_clicked()
                     "  border:1px solid #606060; "
                     "  padding:4px; "
                     "}");
-        qDebug()<<ChannelEnable[3];
     }else{
         ChannelEnable[3] = false;
         ui->btn_CH4->setStyleSheet(
@@ -785,10 +796,71 @@ void MainWindow::on_btn_CH4_clicked()
                     "  border:1px solid #606060; "
                     "  padding:4px; "
                     "}");
-        qDebug()<<ChannelEnable[3];
     }
     waveShow->setLineVisible(3,ChannelEnable[3]);
 }
 
+void MainWindow::on_cb_MulSendCycle_stateChanged(int arg1)
+{
+    qDebug()<<arg1;
+    if(2 == arg1){
+        // 勾选
+        if(!serialIOService->isSerialOpen()){
+            QMessageBox::warning(nullptr,"串口提示","串口未打开");
+            ui->cb_MulSendCycle->setChecked(false);
+            return;
+        }
+        txQueue.clear();
+        txQueueGetIndex = 0;
+        MultiSendItemsTemp = MultiSendItems;     // 20 条记录已经填好
+        std::sort(MultiSendItemsTemp.begin(), MultiSendItemsTemp.end(),
+          [](const MultiSendItem &a, const MultiSendItem &b)
+          {
+              if (a.indexEdit->text().toUInt() != b.indexEdit->text().toUInt())
+                  return a.indexEdit->text().toUInt() < b.indexEdit->text().toUInt();      // 次序小在前
+              return a.itemIndex < b.itemIndex;      // 同次序按序列号
+          });
 
+        for (const MultiSendItem &it : qAsConst(MultiSendItemsTemp))
+        {
+            if(it.indexEdit->text().toUInt()!=0) txQueue.enqueue(it);
+        }
+        MultiSendCycleTimer->start();
+    }else{
+        // 未勾选
+        MultiSendCycleTimer->stop();
+    }
+}
+
+void MainWindow::onMultiSendCycleTimerOut()
+{
+    if (!txQueue.isEmpty())
+    {
+        MultiSendItem temp;
+        temp = txQueue.at(txQueueGetIndex);
+        txQueueGetIndex++;
+        if(txQueueGetIndex>=txQueue.length())
+            txQueueGetIndex=0;
+        sendText(temp.check,temp.edit->text());
+        MultiSendCycleTimer->start(temp.timerEdit->text().toUInt());
+    }
+}
+
+void MainWindow::on_cb_CycleSend_stateChanged(int arg1)
+{
+
+    if(2 == arg1){
+        // 勾选
+        if(!serialIOService->isSerialOpen()){
+            QMessageBox::warning(nullptr,"串口提示","串口未打开");
+            ui->cb_MulSendCycle->setChecked(false);
+            return;
+        }
+
+        SendCycleTimer->start(ui->le_CycleSendMs->text().toUInt());
+    }else{
+        // 未勾选
+        SendCycleTimer->stop();
+    }
+}
 

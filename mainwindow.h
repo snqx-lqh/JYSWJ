@@ -22,6 +22,7 @@
 #include <QPushButton>
 #include <QTableWidget>
 #include <QStringList>
+#include <QTimer>
 
 #include "serialioservice.h"
 #include "udpioservice.h"
@@ -43,10 +44,14 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    struct Row {
-        QCheckBox   *check[2];
-        QLineEdit   *edit[2];
-        QPushButton *btn[2];
+    struct MultiSendItem
+    {
+        int          itemIndex;
+        QCheckBox   *check;
+        QLineEdit   *edit;
+        QPushButton *btn;
+        QLineEdit   *indexEdit;
+        QLineEdit   *timerEdit;
     };
 
     enum ConnectMode{
@@ -74,6 +79,7 @@ public slots:
     void onSendCountChanged(uint32_t count);
     void onRecvCountChanged(uint32_t count);
 
+    void onMultiSendCycleTimerOut();
 protected:
     void closeEvent(QCloseEvent *event);
 
@@ -127,6 +133,10 @@ private slots:
 
     void on_btn_CH4_clicked();
 
+    void on_cb_MulSendCycle_stateChanged(int arg1);
+
+    void on_cb_CycleSend_stateChanged(int arg1);
+
 private:
     Ui::MainWindow *ui;
 
@@ -138,7 +148,13 @@ private:
     SerialIOService *serialIOService;
     QFile         receiveFile;
     QTextStream   receiveTextStream;
-    QVector<Row> rows;
+
+    QVector<MultiSendItem> MultiSendItems;
+    QVector<MultiSendItem> MultiSendItemsTemp;
+    QQueue<MultiSendItem>  txQueue;
+    int txQueueGetIndex = 0;
+    QStringList MultiSendInfo;
+
     QUdpSocket   *udpSocket;
     UdpIOService *udpIOService;
     TcpServerIOService *tcpServerIOService;
@@ -154,5 +170,9 @@ private:
     WaveShow *waveShow;
 
     QVector<bool> ChannelEnable;
+
+    QTimer *MultiSendCycleTimer;
+    QTimer *SendCycleTimer;
+    int    mulSendItemMaxNum = 40;
 };
 #endif // MAINWINDOW_H
