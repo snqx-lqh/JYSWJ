@@ -1,5 +1,7 @@
 #include "serialioservice.h"
 
+
+
 SerialIOService::SerialIOService(QObject *parent) : QObject(parent)
 {
     serialPort = new QSerialPort;

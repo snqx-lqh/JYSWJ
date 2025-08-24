@@ -100,6 +100,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(SendCycleTimer,&QTimer::timeout,this,[this](){
         sendText(ui->cb_SendByHex,ui->plainTextEdit_send->toPlainText());
     });
+
+
 }
 
 MainWindow::~MainWindow()
@@ -250,15 +252,15 @@ void MainWindow::onReadBytes(QByteArray bytes)
     }
 
     //解析字符串到波形中
-    QStringList list = parseSerialData(bytes);
-    if(list[0]!="$WAVE") return;
-    for(int i = 0;i<list.count();i++)
-    {
-        if (i > 3) continue;
-        QString Y_DATA = list[i+1];
-        waveShow->addData(i,x_num,Y_DATA.toDouble());
-    }
-    x_num++;
+//    QStringList list = parseSerialData(bytes);
+//    if(list[0]!="$WAVE") return;
+//    for(int i = 0;i<list.count();i++)
+//    {
+//        if (i > 3) continue;
+//        QString Y_DATA = list[i+1];
+//        waveShow->addData(i,x_num,Y_DATA.toDouble());
+//    }
+//    x_num++;
 }
 
 void MainWindow::onSendCountChanged(uint32_t count)

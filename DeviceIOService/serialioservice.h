@@ -12,6 +12,8 @@
 #include <QCoreApplication>
 #include <QSettings>
 
+#include <QTimer>
+
 class SerialIOService : public QObject
 {
     Q_OBJECT
