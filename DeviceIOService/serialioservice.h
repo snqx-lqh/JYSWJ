@@ -11,6 +11,7 @@
 #include <QDir>
 #include <QCoreApplication>
 #include <QSettings>
+#include <QProgressBar>
 
 #include <QTimer>
 
@@ -27,6 +28,8 @@ public:
 
     void sendBytes              (QByteArray bytes);
     void sendFile               (QString    filePath);
+    void writeNextChunk         ();
+    void handleBytesWritten     (qint64 bytes);
 
     void scanAvailableSerialPort(QComboBox* cmb);
     void addBaudItems           (QComboBox* cmb);
@@ -52,6 +55,8 @@ public:
     QString getSerialFlowControl(void);
     QString getSerialConnectInfo(void);
 
+    void setProgressBar(QProgressBar *_progressBar);
+
 public slots:
     void onReadReady();
 
@@ -61,8 +66,14 @@ signals:
     void recvBytesCount         (uint32_t   count);
 
 private:
-    QSerialPort  *serialPort;
+    QSerialPort  *serialPort=nullptr;
     QStringList   serialBaudList;
+    QProgressBar *progressBar=nullptr;
+
+    // 类成员变量
+    QFile   file;
+    qint64  fileLength;
+    qint64  fileReadLength;
 };
 
 #endif // SERIALIOSERVICE_H

@@ -54,6 +54,13 @@ public:
         QLineEdit   *timerEdit;
     };
 
+    struct WaveShowBtnItem
+    {
+        QPushButton *btn;
+        QLabel      *label;
+        QString      color;
+    };
+
     enum ConnectMode{
         Serial       = 0,
         Udp          = 1,
@@ -67,7 +74,8 @@ public:
     void saveSettings(QSettings*);
     QString visualHex(const QByteArray &ba);
     void onAppendSendBytes(QByteArray Bytes);
-    void multiSendInit();
+    void multiSendInit(void);
+    void waveButtonInit(void);
     void sendBytes(QByteArray);
     void sendText(QCheckBox *checkHexBox,QString text);
 
@@ -125,17 +133,11 @@ private slots:
 
     void on_btn_TcpClientConnect_clicked();
 
-    void on_btn_CH1_clicked();
-
-    void on_btn_CH2_clicked();
-
-    void on_btn_CH3_clicked();
-
-    void on_btn_CH4_clicked();
-
     void on_cb_MulSendCycle_stateChanged(int arg1);
 
     void on_cb_CycleSend_stateChanged(int arg1);
+
+    void on_radioButton_XYSend_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -154,6 +156,8 @@ private:
     QQueue<MultiSendItem>  txQueue;
     int txQueueGetIndex = 0;
     QStringList MultiSendInfo;
+
+    QVector<WaveShowBtnItem> WaveShowBtnItems;
 
     QUdpSocket   *udpSocket;
     UdpIOService *udpIOService;
@@ -174,5 +178,7 @@ private:
     QTimer *MultiSendCycleTimer;
     QTimer *SendCycleTimer;
     int    mulSendItemMaxNum = 40;
+
+
 };
 #endif // MAINWINDOW_H

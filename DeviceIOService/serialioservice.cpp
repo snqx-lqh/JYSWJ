@@ -43,16 +43,49 @@ void SerialIOService::sendBytes(QByteArray bytes)
 
 void SerialIOService::sendFile(QString filePath)
 {
-    QFile file(filePath);
-    if(!file.open(QIODevice::ReadOnly)){
-        qDebug()<<"文件无法读取";
-    }
-    while(!file.atEnd()){
-        QByteArray bytes = file.read(256);
-        serialPort->write(bytes);
-        emit sendBytesCount(bytes.length());
+    if(!isSerialOpen()){
+        QMessageBox::warning(nullptr,"提示","串口未打开");
+        return;
     }
 
+    file.setFileName(filePath);
+    fileLength = file.size();
+    fileReadLength = 0;
+    if(!file.open(QIODevice::ReadOnly)){
+        qDebug() << "文件无法读取";
+        return;
+    }
+
+    connect(serialPort, &QSerialPort::bytesWritten,
+                this, &SerialIOService::handleBytesWritten, Qt::UniqueConnection);
+
+    // 先发送一块
+    writeNextChunk();
+}
+
+void SerialIOService::writeNextChunk()
+{
+    if(!file.atEnd()){
+        QByteArray bytes = file.read(256);
+        serialPort->write(bytes);  // 这里不阻塞
+        emit sendBytesCount(bytes.length());
+        fileReadLength += bytes.size();
+        if(progressBar)
+            progressBar->setValue(fileReadLength*100/fileLength);
+    } else {
+        file.close();
+        disconnect(serialPort, &QSerialPort::bytesWritten,
+                    this, &SerialIOService::handleBytesWritten);
+        QMessageBox::information(nullptr,"文件发送提示","文件发送完成");
+        progressBar->setValue(0);
+        qDebug() << "文件发送完成";
+    }
+}
+
+void SerialIOService::handleBytesWritten(qint64 bytes)
+{
+    Q_UNUSED(bytes);
+    writeNextChunk();  // 每发完一块，再发下一块
 }
 
 void SerialIOService::onReadReady()
@@ -66,7 +99,7 @@ void SerialIOService::scanAvailableSerialPort(QComboBox *cmb)
 {
     cmb->clear();
     foreach(const QSerialPortInfo &info,QSerialPortInfo::availablePorts()){
-        cmb->addItem(info.portName()/*+" "+info.description()*/);
+        cmb->addItem(info.portName()+" "+info.description());
     }
 }
 
@@ -278,4 +311,9 @@ QString SerialIOService::getSerialConnectInfo()
     else if(flowControl == QSerialPort::SoftwareControl)  infoStr += "Software";
 
     return infoStr;
+}
+
+void SerialIOService::setProgressBar(QProgressBar *_progressBar)
+{
+    progressBar = _progressBar;
 }

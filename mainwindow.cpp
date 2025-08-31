@@ -28,9 +28,12 @@ MainWindow::MainWindow(QWidget *parent)
     serialIOService = new SerialIOService();
     serialIOService->scanAvailableSerialPort(ui->cmb_PortName);
     serialIOService->addCommonBaudItem(ui->cmb_BaudRate);
+    serialIOService->setProgressBar(ui->progressBar);
+
     ui->cmb_PortName->addItem("UDP");
     ui->cmb_PortName->addItem("TCPServer");
     ui->cmb_PortName->addItem("TCPClient");
+
 
     // 获得串口信息
     lb_ConnectInfo->setText(serialIOService->getSerialConnectInfo());
@@ -38,6 +41,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(serialIOService,&SerialIOService::readBytes,this,&MainWindow::onReadBytes);
     connect(serialIOService,&SerialIOService::sendBytesCount,this,&MainWindow::onSendCountChanged);
     connect(serialIOService,&SerialIOService::recvBytesCount,this,&MainWindow::onRecvCountChanged);
+
+    connect(ui->widget_ProtocolTransfer,&ProtocolTransferForm::sendBytes,serialIOService,&SerialIOService::sendBytes);
+    connect(serialIOService,&SerialIOService::readBytes,ui->widget_ProtocolTransfer,&ProtocolTransferForm::onReadBytes);
 
     // 多字节发送界面初始化
     multiSendInit();
@@ -83,15 +89,19 @@ MainWindow::MainWindow(QWidget *parent)
 
     qApp->installNativeEventFilter(this);
 
-    ChannelEnable.resize(4);
-    ChannelEnable.fill(true, 4);
+    ChannelEnable.resize(8);
+    ChannelEnable.fill(true, 8);
 
     waveShow = new WaveShow(ui->widget_WaveShow);
     connect(waveShow,&WaveShow::vLineValue,this,[this](QStringList strList){
-        ui->label_ch1->setText(strList[0]);
-        ui->label_ch2->setText(strList[1]);
-        ui->label_ch3->setText(strList[2]);
-        ui->label_ch4->setText(strList[3]);
+        WaveShowBtnItems[0].label->setText(strList[0]);
+        WaveShowBtnItems[1].label->setText(strList[1]);
+        WaveShowBtnItems[2].label->setText(strList[2]);
+        WaveShowBtnItems[3].label->setText(strList[3]);
+        WaveShowBtnItems[4].label->setText(strList[4]);
+        WaveShowBtnItems[5].label->setText(strList[5]);
+        WaveShowBtnItems[6].label->setText(strList[6]);
+        WaveShowBtnItems[7].label->setText(strList[7]);
     });
 
     MultiSendCycleTimer = new QTimer;
@@ -101,7 +111,7 @@ MainWindow::MainWindow(QWidget *parent)
         sendText(ui->cb_SendByHex,ui->plainTextEdit_send->toPlainText());
     });
 
-
+    waveButtonInit();
 }
 
 MainWindow::~MainWindow()
@@ -252,15 +262,19 @@ void MainWindow::onReadBytes(QByteArray bytes)
     }
 
     //解析字符串到波形中
-//    QStringList list = parseSerialData(bytes);
-//    if(list[0]!="$WAVE") return;
-//    for(int i = 0;i<list.count();i++)
-//    {
-//        if (i > 3) continue;
-//        QString Y_DATA = list[i+1];
-//        waveShow->addData(i,x_num,Y_DATA.toDouble());
-//    }
-//    x_num++;
+    if(bytes[0] == '$' && bytes[1] == 'W' && bytes[2] == 'A' && bytes[3] == 'V' && bytes[4] == 'E')
+    {
+        QStringList list = parseSerialData(bytes);
+        for(int i = 0;i<list.count()-1;i++)
+        {
+            if(i > 7) continue;
+            QString Y_DATA = list[i+1];
+            waveShow->addData(i,x_num,Y_DATA.toDouble());
+        }
+        x_num++;
+    }else{
+        ;//
+    }
 }
 
 void MainWindow::onSendCountChanged(uint32_t count)
@@ -294,7 +308,7 @@ void MainWindow::on_btn_OpenSerial_clicked()
         ui->cmb_Parity->setEnabled(true);
         ui->btn_OpenSerial->setText("打开串口");
     }else{
-        serialIOService->setSerialPortName(ui->cmb_PortName->currentText());
+        serialIOService->setSerialPortName(ui->cmb_PortName->currentText().split(" ").at(0));
         serialIOService->setSerialBaudRate(ui->cmb_BaudRate->currentText());
         if(!serialIOService->openSerial()) return;
         ui->cmb_PortName->setEnabled(false);
@@ -381,6 +395,68 @@ void MainWindow::multiSendInit()
         MultiSendItems.append(item);
     }
 }
+
+void MainWindow::waveButtonInit()
+{
+
+    for(int i = 0;i < 8;i++)
+    {
+        WaveShowBtnItem item;
+        item.btn       = new QPushButton(QString("CH%1").arg(i+1));
+        item.label     = new QLabel("0");
+        ui->gridLayout_WaveBtn->addWidget(item.btn,   0, i);
+        ui->gridLayout_WaveBtn->addWidget(item.label, 1, i);
+        switch (i) {
+            case 0: item.color = "rgb(0, 121, 255)";   break;    // 科技蓝
+            case 1: item.color = "rgb(120, 94, 240)";  break;    // 深紫蓝
+            case 2: item.color = "rgb(255, 110, 176)"; break;    // 粉紫色
+            case 3: item.color = "rgb(0, 212, 190)";   break;    // 薄荷绿
+            case 4: item.color = "rgb(255, 153, 0)";   break;    // 琥珀橙
+            case 5: item.color = "rgb(102, 187, 235)"; break;    // 浅天蓝
+            case 6: item.color = "rgb(255, 87, 87)";   break;    // 珊瑚红
+            case 7: item.color = "rgb(160, 214, 134)"; break;    // 嫩绿色
+            default: break;
+        }
+        item.btn->setStyleSheet(
+            "QPushButton {" + QString("  background-color: %1;").arg(item.color) +
+            "  border-radius:8px; border:1px solid #606060;padding:4px; "
+            "}");
+        item.label->setStyleSheet(
+            "QLabel {" + QString("  background-color: %1;").arg(item.color) +
+            "  border-radius:8px; border:1px solid #606060; padding:4px; "
+            "}");
+        connect(item.btn,&QPushButton::clicked,this,[this,item,i](){
+            if(ChannelEnable[i] == false){
+                ChannelEnable[i] = true;
+                item.btn->setStyleSheet(
+                    "QPushButton {" + QString("  background-color: %1;").arg(item.color) +
+                    "  border-radius:8px; border:1px solid #606060;padding:4px; "
+                    "}");
+                item.label->setStyleSheet(
+                    "QLabel {" + QString("  background-color: %1;").arg(item.color) +
+                    "  border-radius:8px;border:1px solid #606060;padding:4px; "
+                    "}");
+            }else{
+                ChannelEnable[i] = false;
+                item.btn->setStyleSheet(
+                    "QPushButton {"
+                    "  background-color:rgb(255, 255, 255);"
+                    "  border-radius:8px;border:1px solid #606060;padding:4px; "
+                    "}");
+                item.label->setStyleSheet(
+                    "QLabel {"
+                    "  background-color:rgb(255, 255, 255);"
+                    "  border-radius:8px; border:1px solid #606060;padding:4px; "
+                    "}");
+            }
+            waveShow->setLineVisible(i,ChannelEnable[i]);
+        });
+
+        WaveShowBtnItems.append(item);
+    }
+}
+
+
 
 void MainWindow::sendText(QCheckBox *checkHexBox, QString text)
 {
@@ -512,6 +588,10 @@ void MainWindow::on_radioButton_MultiSend_clicked()
     ui->stackedWidget_send->setCurrentIndex(1);
 }
 
+void MainWindow::on_radioButton_XYSend_clicked()
+{
+    ui->stackedWidget_send->setCurrentIndex(2);
+}
 
 void MainWindow::on_rB_BasicComunication_clicked()
 {
@@ -562,10 +642,10 @@ void MainWindow::on_btn_RecvClear_clicked()
 
     x_num = 0;
     waveShow->cleanData();
-    ui->label_ch1->setText("0");
-    ui->label_ch2->setText("0");
-    ui->label_ch3->setText("0");
-    ui->label_ch4->setText("0");
+    for(int i = 0;i<8;i++)
+    {
+        WaveShowBtnItems[i].label->setText("0");
+    }
 }
 
 
@@ -643,165 +723,6 @@ void MainWindow::on_btn_TcpClientConnect_clicked()
 }
 
 
-void MainWindow::on_btn_CH1_clicked()
-{
-    if(ChannelEnable[0] == false){
-
-        ChannelEnable[0] = true;
-        ui->btn_CH1->setStyleSheet(
-            "QPushButton {"
-            "  background-color: rgb(0, 170, 255);"
-            "  border-radius:8px; "
-            "  border:1px solid #606060; "
-            "  padding:4px; "
-            "}");
-        ui->label_ch1->setStyleSheet(
-                    "QLabel {"
-                    "  background-color: rgb(0, 170, 255);"
-                    "  border-radius:8px; "
-                    "  border:1px solid #606060; "
-                    "  padding:4px; "
-                    "}");
-    }else{
-        ChannelEnable[0] = false;
-        ui->btn_CH1->setStyleSheet(
-            "QPushButton {"
-            "  background-color:rgb(255, 255, 255);"
-            "  border-radius:8px; "
-            "  border:1px solid #606060; "
-            "  padding:4px; "
-            "}");
-        ui->label_ch1->setStyleSheet(
-                    "QLabel {"
-                    "  background-color:rgb(255, 255, 255);"
-                    "  border-radius:8px; "
-                    "  border:1px solid #606060; "
-                    "  padding:4px; "
-                    "}");
-    }
-    waveShow->setLineVisible(0,ChannelEnable[0]);
-}
-
-
-void MainWindow::on_btn_CH2_clicked()
-{
-    if(ChannelEnable[1] == false){
-
-        ChannelEnable[1] = true;
-        ui->btn_CH2->setStyleSheet(
-            "QPushButton {"
-            "  background-color: rgb(255, 85, 0);"
-            "  border-radius:8px; "
-            "  border:1px solid #606060; "
-            "  padding:4px; "
-            "}");
-        ui->label_ch2->setStyleSheet(
-                    "QLabel {"
-                    "  background-color: rgb(255, 85, 0);"
-                    "  border-radius:8px; "
-                    "  border:1px solid #606060; "
-                    "  padding:4px; "
-                    "}");
-    }else{
-        ChannelEnable[1] = false;
-        ui->btn_CH2->setStyleSheet(
-            "QPushButton {"
-            "  background-color:rgb(255, 255, 255);"
-            "  border-radius:8px; "
-            "  border:1px solid #606060; "
-            "  padding:4px; "
-            "}");
-        ui->label_ch2->setStyleSheet(
-                    "QLabel {"
-                    "  background-color:rgb(255, 255, 255);"
-                    "  border-radius:8px; "
-                    "  border:1px solid #606060; "
-                    "  padding:4px; "
-                    "}");
-    }
-    waveShow->setLineVisible(1,ChannelEnable[1]);
-}
-
-
-void MainWindow::on_btn_CH3_clicked()
-{
-    if(ChannelEnable[2] == false){
-
-        ChannelEnable[2] = true;
-        ui->btn_CH3->setStyleSheet(
-            "QPushButton {"
-            "  background-color: rgb(85, 255, 0);"
-            "  border-radius:8px; "
-            "  border:1px solid #606060; "
-            "  padding:4px; "
-            "}");
-        ui->label_ch3->setStyleSheet(
-                    "QLabel {"
-                    "  background-color: rgb(85, 255, 0);"
-                    "  border-radius:8px; "
-                    "  border:1px solid #606060; "
-                    "  padding:4px; "
-                    "}");
-    }else{
-        ChannelEnable[2] = false;
-        ui->btn_CH3->setStyleSheet(
-            "QPushButton {"
-            "  background-color:rgb(255, 255, 255);"
-            "  border-radius:8px; "
-            "  border:1px solid #606060; "
-            "  padding:4px; "
-            "}");
-        ui->label_ch3->setStyleSheet(
-                    "QLabel {"
-                    "  background-color:rgb(255, 255, 255);"
-                    "  border-radius:8px; "
-                    "  border:1px solid #606060; "
-                    "  padding:4px; "
-                    "}");
-    }
-    waveShow->setLineVisible(2,ChannelEnable[2]);
-}
-
-
-void MainWindow::on_btn_CH4_clicked()
-{
-    if(ChannelEnable[3] == false){
-
-        ChannelEnable[3] = true;
-        ui->btn_CH4->setStyleSheet(
-            "QPushButton {"
-            "  background-color: rgb(0, 255, 255);"
-            "  border-radius:8px; "
-            "  border:1px solid #606060; "
-            "  padding:4px; "
-            "}");
-        ui->label_ch4->setStyleSheet(
-                    "QLabel {"
-                    "  background-color: rgb(0, 255, 255);"
-                    "  border-radius:8px; "
-                    "  border:1px solid #606060; "
-                    "  padding:4px; "
-                    "}");
-    }else{
-        ChannelEnable[3] = false;
-        ui->btn_CH4->setStyleSheet(
-            "QPushButton {"
-            "  background-color:rgb(255, 255, 255);"
-            "  border-radius:8px; "
-            "  border:1px solid #606060; "
-            "  padding:4px; "
-            "}");
-        ui->label_ch4->setStyleSheet(
-                    "QLabel {"
-                    "  background-color:rgb(255, 255, 255);"
-                    "  border-radius:8px; "
-                    "  border:1px solid #606060; "
-                    "  padding:4px; "
-                    "}");
-    }
-    waveShow->setLineVisible(3,ChannelEnable[3]);
-}
-
 void MainWindow::on_cb_MulSendCycle_stateChanged(int arg1)
 {
     qDebug()<<arg1;
@@ -865,4 +786,7 @@ void MainWindow::on_cb_CycleSend_stateChanged(int arg1)
         SendCycleTimer->stop();
     }
 }
+
+
+
 
