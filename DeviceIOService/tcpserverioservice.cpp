@@ -6,6 +6,11 @@ TcpServerIOService::TcpServerIOService(QObject *parent) : QObject(parent)
     connect(tcpServer, &QTcpServer::newConnection, this, &TcpServerIOService::newConnection_slot);
 }
 
+bool TcpServerIOService::isTcpServerOpen()
+{
+    return tcpServer->isListening();
+}
+
 void TcpServerIOService::setLocalAddrAndPort(QString LocalAddr,quint16 port)
 {
     // 先停掉上一次监听

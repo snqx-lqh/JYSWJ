@@ -253,7 +253,7 @@ void MainWindow::onReadBytes(QByteArray bytes)
         strTemp = '\n' + QDateTime::currentDateTime()
                        .toString("[yy-MM-dd hh:mm:ss.zzz]收<-");
     }
-    strTemp += ui->cb_RecvHexShow->isChecked() ? bytes.toHex(' ') : visualHex(bytes);
+    strTemp += ui->cb_RecvHexShow->isChecked() ? bytes.toHex(' ') : QString::fromLocal8Bit(bytes) ;
     ui->textBrowser_recv->insertPlainText(strTemp);
     ui->textBrowser_recv->moveCursor(QTextCursor::End);
     if(receiveFile.isOpen()){
@@ -728,11 +728,35 @@ void MainWindow::on_cb_MulSendCycle_stateChanged(int arg1)
     qDebug()<<arg1;
     if(2 == arg1){
         // 勾选
-        if(!serialIOService->isSerialOpen()){
-            QMessageBox::warning(nullptr,"串口提示","串口未打开");
-            ui->cb_MulSendCycle->setChecked(false);
+        if(connectMode == Serial){
+            if(!serialIOService->isSerialOpen()){
+                QMessageBox::warning(nullptr,"串口提示","串口未打开");
+                ui->cb_MulSendCycle->setChecked(false);
+                return;
+            }
+        }else if(connectMode == TcpClient){
+            if(!tcpClientIOService->isTcpClientOpen()){
+                QMessageBox::warning(nullptr,"TcpClient提示","TcpClient未打开");
+                ui->cb_MulSendCycle->setChecked(false);
+                return;
+            }
+        }else if(connectMode == TcpServer){
+            if(!tcpServerIOService->isTcpServerOpen()){
+                QMessageBox::warning(nullptr,"TcpServer提示","TcpServer未打开");
+                ui->cb_MulSendCycle->setChecked(false);
+                return;
+            }
+        }else if(connectMode == Udp){
+            if(!udpIOService->isUdpOpen()){
+                QMessageBox::warning(nullptr,"Udp提示","Udp未打开");
+                ui->cb_MulSendCycle->setChecked(false);
+                return;
+            }
+        }else{
+            QMessageBox::warning(nullptr,"提示","无通讯接口打开");
             return;
         }
+
         txQueue.clear();
         txQueueGetIndex = 0;
         MultiSendItemsTemp = MultiSendItems;     // 20 条记录已经填好
@@ -774,9 +798,32 @@ void MainWindow::on_cb_CycleSend_stateChanged(int arg1)
 
     if(2 == arg1){
         // 勾选
-        if(!serialIOService->isSerialOpen()){
-            QMessageBox::warning(nullptr,"串口提示","串口未打开");
-            ui->cb_MulSendCycle->setChecked(false);
+        if(connectMode == Serial){
+            if(!serialIOService->isSerialOpen()){
+                QMessageBox::warning(nullptr,"串口提示","串口未打开");
+                ui->cb_CycleSend->setChecked(false);
+                return;
+            }
+        }else if(connectMode == TcpClient){
+            if(!tcpClientIOService->isTcpClientOpen()){
+                QMessageBox::warning(nullptr,"TcpClient提示","TcpClient未打开");
+                ui->cb_CycleSend->setChecked(false);
+                return;
+            }
+        }else if(connectMode == TcpServer){
+            if(!tcpServerIOService->isTcpServerOpen()){
+                QMessageBox::warning(nullptr,"TcpServer提示","TcpServer未打开");
+                ui->cb_CycleSend->setChecked(false);
+                return;
+            }
+        }else if(connectMode == Udp){
+            if(!udpIOService->isUdpOpen()){
+                QMessageBox::warning(nullptr,"Udp提示","Udp未打开");
+                ui->cb_CycleSend->setChecked(false);
+                return;
+            }
+        }else{
+            QMessageBox::warning(nullptr,"提示","无通讯接口打开");
             return;
         }
 

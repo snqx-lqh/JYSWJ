@@ -83,7 +83,12 @@ void ProtocolTransferForm::XmodemTransfer()
     ui->progressBar->setValue(XmodemSendCount * 100/XmodeArray.size());
 
     // 状态进入发送完成状态
-    send_state = XMODEM_SEND_DOWN;
+    if(packetNum * kPayload > XmodeArray.size())
+    {
+        send_state = ProtocolTransferForm::XMODEM_SEND_ALL_FINISH;
+    }else{
+        send_state = ProtocolTransferForm::XMODEM_SEND_DOWN;
+    }
 }
 
 void ProtocolTransferForm::onMainTimeout()
@@ -94,21 +99,17 @@ void ProtocolTransferForm::onMainTimeout()
     case ProtocolTransferForm::XMODEM_SEND:
         XmodemTransfer();
         break;
-    case ProtocolTransferForm::XMODEM_SEND_DOWN:
-        if(packetNum * kPayload > XmodeArray.size())
+    case ProtocolTransferForm::XMODEM_SEND_SEND_EOT:
         {
             QByteArray bytes;
             bytes.append(0x04);
             emit sendBytes(bytes);
-            send_state = ProtocolTransferForm::XMODEM_SEND_WAIT_EOT_ACK;
+            send_state = XMODEM_SEND_WAIT_EOT_ACK;
+            break;
         }
-        break;
     default:
         break;
     }
-
-//    MainTimerCount ++;
-
 }
 
 void ProtocolTransferForm::onReadBytes(QByteArray bytes)
@@ -120,6 +121,8 @@ void ProtocolTransferForm::onReadBytes(QByteArray bytes)
             showMsg("green",QString("Start Send..."));
         }else if(bytes[0] == 0x06 && send_state == ProtocolTransferForm::XMODEM_SEND_DOWN){
             send_state = XMODEM_SEND;
+        }else if(bytes[0] == 0x06 && send_state == ProtocolTransferForm::XMODEM_SEND_ALL_FINISH){
+            send_state = XMODEM_SEND_SEND_EOT;
         }else if(bytes[0] == 0x06 && send_state == ProtocolTransferForm::XMODEM_SEND_WAIT_EOT_ACK){
             send_state = IDLE;
             showMsg("green",QString("发送完成！"));

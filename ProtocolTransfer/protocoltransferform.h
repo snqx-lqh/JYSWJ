@@ -26,6 +26,8 @@ public:
         IDLE = 0,
         XMODEM_SEND,
         XMODEM_SEND_DOWN,
+        XMODEM_SEND_ALL_FINISH,
+        XMODEM_SEND_SEND_EOT,
         XMODEM_SEND_WAIT_EOT_ACK
     };
     Q_ENUM(SEND_STATE)

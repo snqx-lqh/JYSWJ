@@ -15,6 +15,8 @@ class TcpServerIOService : public QObject
 public:
     explicit TcpServerIOService(QObject *parent = nullptr);
 
+    bool isTcpServerOpen           (void);
+
     void setLocalAddrAndPort(QString LocalAddr,quint16 port);
     void sendBytes(QByteArray);
     void sendBytes(QString,QByteArray);

@@ -6,6 +6,11 @@ UdpIOService::UdpIOService(QObject *parent) : QObject(parent)
     connect(udpSocket, &QUdpSocket::readyRead, this, &UdpIOService::onReadReady, Qt::UniqueConnection);
 }
 
+bool UdpIOService::isUdpOpen()
+{
+    return udpSocket->isOpen();
+}
+
 void UdpIOService::bindAimAddressAndPort(QString aimAddr, QString aimPort, QString localAddr, QString localPort)
 {
     // 1. 如果 socket 已经绑定，先关闭，防止重复绑定

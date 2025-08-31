@@ -10,6 +10,11 @@ TcpClientIOService::TcpClientIOService(QObject *parent) : QObject      (parent)
     connect(tcpClientSocket, &QTcpSocket::disconnected, this, &TcpClientIOService::disconnected_slot);
 }
 
+bool TcpClientIOService::isTcpClientOpen()
+{
+    return tcpClientSocket->isOpen();
+}
+
 bool TcpClientIOService::connectServer(QString hostName, quint32 port)
 {
     /* 1. 端口范围限制 */

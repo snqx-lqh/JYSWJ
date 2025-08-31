@@ -13,6 +13,8 @@ class TcpClientIOService : public QObject
 public:
     explicit TcpClientIOService(QObject *parent = nullptr);
 
+    bool isTcpClientOpen           (void);
+
     void sendBytes(QByteArray);
     void sendFile(QString);
 
