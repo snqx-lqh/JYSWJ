@@ -34,7 +34,7 @@ public:
 
     void showMsg(QString color,QString msg);
 
-    quint16 crc16_ccitt(const quint8 *data, qint32 len);
+    quint16 crc16_ccitt(const quint8 *ptr, qint32 len);
     void XmodemTransfer();
 
 public slots:

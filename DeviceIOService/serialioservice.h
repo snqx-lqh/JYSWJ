@@ -30,6 +30,7 @@ public:
     void sendFile               (QString    filePath);
     void writeNextChunk         ();
     void handleBytesWritten     (qint64 bytes);
+    QByteArray safeRead         (QSerialPort *dev, qint64 maxSize);
 
     void scanAvailableSerialPort(QComboBox* cmb);
     void addBaudItems           (QComboBox* cmb);

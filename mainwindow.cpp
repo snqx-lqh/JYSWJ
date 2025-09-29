@@ -112,6 +112,8 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     waveButtonInit();
+
+    ui->plainTextEdit_recv->installEventFilter(this);
 }
 
 MainWindow::~MainWindow()
@@ -189,6 +191,23 @@ void MainWindow::saveSettings(QSettings *settings)
     settings->endGroup();
 }
 
+bool MainWindow::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::KeyPress)
+    {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+        qDebug() << "Ate key press:" << keyEvent->key() << "Text:" << keyEvent->text();
+        // 返回 true 表示事件被处理，不再传递给控件
+        sendBytes(keyEvent->text().toLocal8Bit());
+        return true;
+    }
+    else
+    {
+        // 标准事件处理
+        return QObject::eventFilter(obj, event);
+    }
+}
+
 // 暂时未使用,功能不全，主要是想把不能显示的字符用空框显示，结果把换行都弄没了，后续处理
 QString MainWindow::visualHex(const QByteArray &ba)
 {
@@ -254,8 +273,8 @@ void MainWindow::onReadBytes(QByteArray bytes)
                        .toString("[yy-MM-dd hh:mm:ss.zzz]收<-");
     }
     strTemp += ui->cb_RecvHexShow->isChecked() ? bytes.toHex(' ') : QString::fromLocal8Bit(bytes) ;
-    ui->textBrowser_recv->insertPlainText(strTemp);
-    ui->textBrowser_recv->moveCursor(QTextCursor::End);
+    ui->plainTextEdit_recv->insertPlainText(strTemp);
+    ui->plainTextEdit_recv->moveCursor(QTextCursor::End);
     if(receiveFile.isOpen()){
         //receiveTextStream<<bytes;
         receiveFile.write(bytes);
@@ -362,8 +381,8 @@ void MainWindow::onAppendSendBytes(QByteArray Bytes)
                            .toString("[yy-MM-dd hh:mm:ss.zzz]发->");
         }
         chunk += ui->cb_RecvHexShow->isChecked() ? Bytes.toHex(' ') : visualHex(Bytes);
-        ui->textBrowser_recv->insertPlainText(chunk);
-        ui->textBrowser_recv->moveCursor(QTextCursor::End);
+        ui->plainTextEdit_recv->insertPlainText(chunk);
+        ui->plainTextEdit_recv->moveCursor(QTextCursor::End);
     }
 }
 
@@ -636,7 +655,7 @@ void MainWindow::on_btn_SendClear_clicked()
 
 void MainWindow::on_btn_RecvClear_clicked()
 {
-    ui->textBrowser_recv->clear();
+    ui->plainTextEdit_recv->clear();
     recvCount = 0;
     lb_SendRecvInfo->setText(QString("发送：%1 接收：%2").arg(sendCount, 8).arg(recvCount, 8));
 

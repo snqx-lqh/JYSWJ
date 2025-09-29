@@ -78,7 +78,7 @@ public:
     void waveButtonInit(void);
     void sendBytes(QByteArray);
     void sendText(QCheckBox *checkHexBox,QString text);
-
+    bool eventFilter(QObject *obj, QEvent *event);
     bool nativeEventFilter(const QByteArray &eventType, void *message, long *result);
     QStringList parseSerialData(const QByteArray &raw);
 public slots:

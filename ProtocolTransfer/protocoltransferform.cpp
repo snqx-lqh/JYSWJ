@@ -28,17 +28,26 @@ void ProtocolTransferForm::showMsg(QString color, QString msg)
     ui->plainTextEdit->appendHtml(html);
 }
 
-quint16 ProtocolTransferForm::crc16_ccitt(const quint8 *data, qint32 len)
+quint16 ProtocolTransferForm::crc16_ccitt(const quint8 *ptr, qint32 len)
 {
-    quint16 crc = 0x0000;
-    while (len--)
+    unsigned int i;
+    unsigned short crc = 0x0000;
+
+    while(len--)
     {
-        crc ^= *data++;
-        for (int i = 0; i < 8; ++i)
-            crc = (crc & 0x0001) ? (crc >> 1) ^ 0xA001 : (crc >> 1);
+        crc ^= (unsigned short)(*ptr++) << 8;
+        for (i = 0; i < 8; ++i)
+        {
+            if (crc & 0x8000)
+                crc = (crc << 1) ^ 0x1021;
+            else
+                crc <<= 1;
+        }
     }
+
     return crc;
 }
+
 
 void ProtocolTransferForm::XmodemTransfer()
 {

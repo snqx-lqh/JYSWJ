@@ -27,7 +27,9 @@ bool SerialIOService::openSerial()
 
 void SerialIOService::closeSerial()
 {
-    serialPort->close();
+    if(serialPort && isSerialOpen()){
+        serialPort->close();
+    }
 }
 
 bool SerialIOService::isSerialOpen()
@@ -88,9 +90,34 @@ void SerialIOService::handleBytesWritten(qint64 bytes)
     writeNextChunk();  // 每发完一块，再发下一块
 }
 
+QByteArray SerialIOService::safeRead(QSerialPort *dev, qint64 maxSize)
+{
+    if (!dev || !dev->isOpen()) {
+        qWarning() << "Device not open";
+        return {};
+    }
+
+    const qint64 avail = dev->bytesAvailable();
+    if (avail <= 0) {
+        return {};
+    }
+
+    const qint64 toRead = qMin(avail, maxSize);
+    QByteArray data(toRead, Qt::Uninitialized);
+    const qint64 actuallyRead = dev->read(data.data(), toRead);
+
+    if (actuallyRead < 0) {
+        qWarning() << "Read error:" << dev->errorString();
+        return {};
+    }
+
+    data.resize(actuallyRead);   // 防止少读
+    return data;
+}
+
 void SerialIOService::onReadReady()
 {
-    QByteArray bytes = serialPort->readAll();
+    QByteArray bytes = safeRead(serialPort, 16 * 1024);
     emit readBytes(bytes);
     emit recvBytesCount(bytes.length());
 }
@@ -127,7 +154,8 @@ void SerialIOService::addCustomBaudItem(QComboBox *cmb, QString serialBaud, bool
         std::sort(list_baud.begin(),list_baud.end());
         QStringList strs;
         strs.reserve(list_baud.size());
-        for(qint32 n:list_baud) strs<<QString::number(n);
+        for(qint32 n:list_baud)
+            strs<<QString::number(n);
         cmb->clear();
         cmb->addItems(strs);
     }
@@ -147,7 +175,8 @@ void SerialIOService::delCustomBaudItem(QComboBox *cmb, int index, bool sortFlag
         std::sort(list_baud.begin(),list_baud.end());
         QStringList strs;
         strs.reserve(list_baud.size());
-        for(qint32 n:list_baud) strs<<QString::number(n);
+        for(qint32 n:list_baud)
+            strs<<QString::number(n);
         cmb->clear();
         cmb->addItems(strs);
     }
