@@ -65,7 +65,7 @@ private:
     QByteArray XmodeArray;
     qint32     MainTimerCount = 0;
     qint32     XmodemSendCount = 0;
-    uint8_t    packetNum = 0;          // 第一包序号从 1 开始
+    uint32_t   packetNum = 0;          // 第一包序号从 1 开始
     int        kPayload   = 0;       // 一帧中的数据实际有效数据量
     SEND_STATE send_state;
 };
