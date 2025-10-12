@@ -56,6 +56,8 @@ public:
     QString getSerialFlowControl(void);
     QString getSerialConnectInfo(void);
 
+    QSerialPort  *getSerial(void);
+
     void setProgressBar(QProgressBar *_progressBar);
 
 public slots:

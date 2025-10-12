@@ -39,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent)
     lb_ConnectInfo->setText(serialIOService->getSerialConnectInfo());
 
     connect(serialIOService,&SerialIOService::readBytes,this,&MainWindow::onReadBytes);
+    connect(serialIOService,&SerialIOService::readBytes,ui->plainTextEdit_recv,&Terminal::onReadBytes);
     connect(serialIOService,&SerialIOService::sendBytesCount,this,&MainWindow::onSendCountChanged);
     connect(serialIOService,&SerialIOService::recvBytesCount,this,&MainWindow::onRecvCountChanged);
 
@@ -113,7 +114,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     waveButtonInit();
 
-    ui->plainTextEdit_recv->installEventFilter(this);
+    //ui->plainTextEdit_recv->installEventFilter(this);
+    ui->plainTextEdit_recv->setIODevice(serialIOService->getSerial());
+
+    ui->comboBox_Codec->addItem("GBK");
+    ui->comboBox_Codec->addItem("UTF-8");
 }
 
 MainWindow::~MainWindow()
@@ -273,8 +278,8 @@ void MainWindow::onReadBytes(QByteArray bytes)
                        .toString("[yy-MM-dd hh:mm:ss.zzz]收<-");
     }
     strTemp += ui->cb_RecvHexShow->isChecked() ? bytes.toHex(' ') : QString::fromLocal8Bit(bytes) ;
-    ui->plainTextEdit_recv->insertPlainText(strTemp);
-    ui->plainTextEdit_recv->moveCursor(QTextCursor::End);
+//    ui->plainTextEdit_recv->insertPlainText(strTemp);
+//    ui->plainTextEdit_recv->moveCursor(QTextCursor::End);
     if(receiveFile.isOpen()){
         //receiveTextStream<<bytes;
         receiveFile.write(bytes);
@@ -853,6 +858,8 @@ void MainWindow::on_cb_CycleSend_stateChanged(int arg1)
     }
 }
 
-
-
+void MainWindow::on_comboBox_Codec_currentIndexChanged(const QString &arg1)
+{
+    ui->plainTextEdit_recv->setEncoding(arg1.toLocal8Bit());
+}
 

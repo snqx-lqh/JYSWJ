@@ -342,6 +342,11 @@ QString SerialIOService::getSerialConnectInfo()
     return infoStr;
 }
 
+QSerialPort *SerialIOService::getSerial()
+{
+    return serialPort;
+}
+
 void SerialIOService::setProgressBar(QProgressBar *_progressBar)
 {
     progressBar = _progressBar;

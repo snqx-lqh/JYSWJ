@@ -31,6 +31,7 @@
 #include "qcustomplot.h"
 #include "waveshow.h"
 #include <QVector>
+#include "terminal.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -139,6 +140,8 @@ private slots:
 
     void on_radioButton_XYSend_clicked();
 
+    void on_comboBox_Codec_currentIndexChanged(const QString &arg1);
+
 private:
     Ui::MainWindow *ui;
 
@@ -178,7 +181,7 @@ private:
     QTimer *MultiSendCycleTimer;
     QTimer *SendCycleTimer;
     int    mulSendItemMaxNum = 40;
-
+    Terminal *m_term;
 
 };
 #endif // MAINWINDOW_H

@@ -10,7 +10,7 @@ CONFIG += c++11
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-DEFINES += APPVERSION=\\\"V1.0.8\\\"
+DEFINES += APPVERSION=\\\"V1.0.9\\\"
 
 RC_ICONS = JYSWJ.ico
 
@@ -35,6 +35,10 @@ include($$PWD/GraphShow/GraphShow.pri)
 
 INCLUDEPATH += $$PWD/ProtocolTransfer
 include($$PWD/ProtocolTransfer/ProtocolTransfer.pri)
+
+
+INCLUDEPATH += $$PWD/CommonWidget
+include($$PWD/CommonWidget/CommonWidget.pri)
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

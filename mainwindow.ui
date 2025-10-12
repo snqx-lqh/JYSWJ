@@ -566,6 +566,20 @@
               </widget>
              </item>
              <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_8">
+               <item>
+                <widget class="QLabel" name="label_21">
+                 <property name="text">
+                  <string>编码格式</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="comboBox_Codec"/>
+               </item>
+              </layout>
+             </item>
+             <item>
               <widget class="QPushButton" name="btn_RecvClear">
                <property name="text">
                 <string>清空接收区</string>
@@ -795,7 +809,7 @@
                   <number>0</number>
                  </property>
                  <item>
-                  <widget class="QPlainTextEdit" name="plainTextEdit_recv"/>
+                  <widget class="Terminal" name="plainTextEdit_recv"/>
                  </item>
                 </layout>
                </widget>
@@ -848,7 +862,7 @@
              <item>
               <widget class="QStackedWidget" name="stackedWidget_send">
                <property name="currentIndex">
-                <number>1</number>
+                <number>0</number>
                </property>
                <widget class="QWidget" name="page_5">
                 <layout class="QVBoxLayout" name="verticalLayout_12">
@@ -1115,6 +1129,11 @@
    <extends>QWidget</extends>
    <header>protocoltransferform.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>Terminal</class>
+   <extends>QPlainTextEdit</extends>
+   <header>terminal.h</header>
   </customwidget>
  </customwidgets>
  <resources>
