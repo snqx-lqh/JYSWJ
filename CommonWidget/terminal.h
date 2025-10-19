@@ -5,20 +5,26 @@
 #include <QIODevice>
 #include <QDebug>
 #include <QTextCodec>
+#include <QDateTime>
 
 class Terminal : public QPlainTextEdit
 {
     Q_OBJECT
 public:
     explicit Terminal(  QWidget *parent = nullptr);
-    void setIODevice(QIODevice *io);
     void setEncoding(const QByteArray &encodingName);   // 新增：设置编码
+    void appendData(const QByteArray &ba);
+    void appendSendData(const QByteArray &ba);
+    void setShowHexState(bool state);
+    void setShowDateState(bool state);
 
 private:
-    QIODevice *m_io;
     QTextCodec *m_codec = nullptr;                      // 当前使用的编码
+    bool mShowHexState  = false;
+    bool mShowDateState = false;
 
-    void appendData(const QByteArray &ba);
+signals:
+    void sendBytes(QByteArray bytes);
 
 public slots:
     void onReadBytes(QByteArray bytes);
@@ -28,7 +34,7 @@ protected:
     void insertFromMimeData(const QMimeData *source) override;
 
 private slots:
-    void onReadyRead();
+
 };
 
 #endif // TERMINAL_H

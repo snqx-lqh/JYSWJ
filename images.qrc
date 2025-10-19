@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>images/connect.png</file>
+        <file>images/disconnect.png</file>
+        <file>images/expand.png</file>
+        <file>images/versionInfo.png</file>
+        <file>images/multisend.png</file>
+        <file>images/favicon.ico</file>
+    </qresource>
+</RCC>

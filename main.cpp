@@ -85,18 +85,14 @@ LONG CreateCrashHander(EXCEPTION_POINTERS *pException)
     return EXCEPTION_EXECUTE_HANDLER;
 }
 
-
-
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    MainWindow w;
-
-    QTextCodec *codec=QTextCodec::codecForLocale();
-    QTextCodec::setCodecForLocale(QTextCodec::codecForLocale());
 
     SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)CreateCrashHander);
 
+
+    MainWindow w;
     w.show();
     return a.exec();
 }

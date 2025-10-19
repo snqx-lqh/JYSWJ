@@ -33,6 +33,7 @@ signals:
     void recvBytesCount(uint32_t);
 
     void getLocalPort(quint16);
+    void connectionResult(bool success, QString message);  // 连接结果反馈
 private:
     //定义一个客户端指针
     QTcpSocket *tcpClientSocket;

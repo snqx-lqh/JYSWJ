@@ -11,7 +11,7 @@ bool TcpServerIOService::isTcpServerOpen()
     return tcpServer->isListening();
 }
 
-void TcpServerIOService::setLocalAddrAndPort(QString LocalAddr,quint16 port)
+bool TcpServerIOService::setLocalAddrAndPort(QString LocalAddr,quint16 port)
 {
     // 先停掉上一次监听
     if (tcpServer->isListening())
@@ -21,9 +21,11 @@ void TcpServerIOService::setLocalAddrAndPort(QString LocalAddr,quint16 port)
     if(!tcpServer->listen(QHostAddress(LocalAddr),localPort))
     {
         qDebug()<<"失败服务器启动失败";
+        return false;
     }else{
         qDebug()<<"成功服务器启动成功";
     }
+    return true;
 }
 
 void TcpServerIOService::stopServer()

@@ -79,7 +79,8 @@ void SerialIOService::writeNextChunk()
         disconnect(serialPort, &QSerialPort::bytesWritten,
                     this, &SerialIOService::handleBytesWritten);
         QMessageBox::information(nullptr,"文件发送提示","文件发送完成");
-        progressBar->setValue(0);
+        if(progressBar)
+            progressBar->setValue(0);
         qDebug() << "文件发送完成";
     }
 }

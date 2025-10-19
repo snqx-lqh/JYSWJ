@@ -11,7 +11,7 @@ bool UdpIOService::isUdpOpen()
     return udpSocket->isOpen();
 }
 
-void UdpIOService::bindAimAddressAndPort(QString aimAddr, QString aimPort, QString localAddr, QString localPort)
+bool UdpIOService::bindAimAddressAndPort(QString aimAddr, QString aimPort, QString localAddr, QString localPort)
 {
     // 1. 如果 socket 已经绑定，先关闭，防止重复绑定
     if (udpSocket->state() == QAbstractSocket::BoundState) {
@@ -26,7 +26,7 @@ void UdpIOService::bindAimAddressAndPort(QString aimAddr, QString aimPort, QStri
         bindAddress = QHostAddress(localAddr);
         if (bindAddress.isNull()) {
             qWarning() << "Invalid local address:" << localAddr;
-            return;
+            return false;
         }
     }
 
@@ -35,7 +35,7 @@ void UdpIOService::bindAimAddressAndPort(QString aimAddr, QString aimPort, QStri
     quint16 port = static_cast<quint16>(localPort.toUShort(&ok));
     if (!ok || port == 0) {
         qWarning() << "Invalid local port:" << localPort;
-        return;
+        return false;
     }
 
     // 4. 绑定
@@ -46,7 +46,7 @@ void UdpIOService::bindAimAddressAndPort(QString aimAddr, QString aimPort, QStri
     if (!bindOk) {
         qWarning() << "UDP bind failed:" << udpSocket->errorString()
                    << "@" << bindAddress.toString() << ":" << port;
-        return;
+        return false;
     }
 
     // 6. 保存“目标地址 / 端口”供后续 sendDatagram 使用（可选）
@@ -56,6 +56,7 @@ void UdpIOService::bindAimAddressAndPort(QString aimAddr, QString aimPort, QStri
     qDebug() << "UDP socket bound to"
              << udpSocket->localAddress().toString()
              << ":" << udpSocket->localPort();
+    return true;
 }
 
 void UdpIOService::sendBytes(QByteArray bytes)

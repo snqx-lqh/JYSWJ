@@ -17,7 +17,7 @@ public:
 
     bool isTcpServerOpen           (void);
 
-    void setLocalAddrAndPort(QString LocalAddr,quint16 port);
+    bool setLocalAddrAndPort(QString LocalAddr,quint16 port);
     void sendBytes(QByteArray);
     void sendBytes(QString,QByteArray);
 

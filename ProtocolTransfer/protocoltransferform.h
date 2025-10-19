@@ -9,6 +9,10 @@
 #include <QDateTime>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QSettings>
+#include <QDir>
+#include <QDebug>
+
 
 namespace Ui {
 class ProtocolTransferForm;
@@ -36,6 +40,9 @@ public:
 
     quint16 crc16_ccitt(const quint8 *ptr, qint32 len);
     void XmodemTransfer();
+
+    void loadSettings();
+    void saveSettings();
 
 public slots:
     void onMainTimeout();
@@ -68,6 +75,7 @@ private:
     uint32_t   packetNum = 0;          // 第一包序号从 1 开始
     int        kPayload   = 0;       // 一帧中的数据实际有效数据量
     SEND_STATE send_state;
+    QString    m_iniFile;
 };
 
 #endif // PROTOCOLTRANSFERFORM_H

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>RecvAreaForm</class>
+ <widget class="QWidget" name="RecvAreaForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>2</number>
+   </property>
+   <property name="topMargin">
+    <number>2</number>
+   </property>
+   <property name="rightMargin">
+    <number>2</number>
+   </property>
+   <property name="bottomMargin">
+    <number>2</number>
+   </property>
+   <item>
+    <widget class="QWidget" name="widget_Recv" native="true">
+     <property name="styleSheet">
+      <string notr="true">#widget_Recv{
+	background-color:rgb(230, 230, 230);
+    border-width:1px;
+    border-radius:3px;
+
+}</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="leftMargin">
+       <number>5</number>
+      </property>
+      <property name="topMargin">
+       <number>5</number>
+      </property>
+      <property name="rightMargin">
+       <number>5</number>
+      </property>
+      <property name="bottomMargin">
+       <number>5</number>
+      </property>
+      <item>
+       <widget class="QTabWidget" name="tabWidget">
+        <property name="styleSheet">
+         <string notr="true">/* 整条标签栏背景 */
+QTabWidget::pane {
+    border: 1px solid #C4C4C4;
+    background: white;
+}
+QTabBar::tab {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #E1E1E1, stop:0.4 #DDDDDD,
+                                stop:0.5 #D8D8D8, stop:1 #D3D3D3);
+    border: 1px solid #C4C4C4;
+    padding: 6px 12px;          /* 文字与边框距离 */
+    margin-right: 2px;
+    font: 12px &quot;Microsoft YaHei&quot;;
+}
+/* 选中态 */
+QTabBar::tab:selected {
+    background: white;
+    border-bottom-color: white; /* 与面板融为一体 */
+    font-weight: bold;
+    color: #2C3E50;
+}
+/* 鼠标悬停 */
+QTabBar::tab:hover:!selected {
+    background: #B8C6DB;
+}
+/* 禁用态 */
+QTabBar::tab:disabled {
+    color: #999;
+}</string>
+        </property>
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="tab_Recv">
+         <attribute name="title">
+          <string>文本接收</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="Terminal" name="plainTextEdit">
+            <property name="frameShape">
+             <enum>QFrame::NoFrame</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>Terminal</class>
+   <extends>QPlainTextEdit</extends>
+   <header>terminal.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

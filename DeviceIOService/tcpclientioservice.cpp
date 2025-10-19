@@ -5,9 +5,9 @@ TcpClientIOService::TcpClientIOService(QObject *parent) : QObject      (parent)
     //给客户端指针实例化空间
     tcpClientSocket = new QTcpSocket;
     connect(tcpClientSocket,&QTcpSocket::readyRead,this,&TcpClientIOService::onReadReady);
-
     connect(tcpClientSocket, &QTcpSocket::connected, this, &TcpClientIOService::connected_slot);
     connect(tcpClientSocket, &QTcpSocket::disconnected, this, &TcpClientIOService::disconnected_slot);
+
 }
 
 bool TcpClientIOService::isTcpClientOpen()
@@ -17,46 +17,45 @@ bool TcpClientIOService::isTcpClientOpen()
 
 bool TcpClientIOService::connectServer(QString hostName, quint32 port)
 {
-    /* 1. 端口范围限制 */
     if (port == 0 || port > 65535) {
-        qWarning() << "Port out of range:" << port;
+        emit connectionResult(false, tr("端口无效: %1").arg(port));
         return false;
     }
 
-    /* 2. 地址格式检查：支持 IPv4 / IPv6 / 域名 */
     QHostAddress addr;
-    if (!addr.setAddress(hostName)) {                 // 不是纯 IP
-        // 做一次简单的域名格式校验，只让“合法字符”通过
+    if (!addr.setAddress(hostName)) {
         QRegularExpression re(R"(^[\w.-]+$)");
         if (!re.match(hostName).hasMatch()) {
-            qWarning() << "Invalid host name format:" << hostName;
-            return false;
-        }
-    } else {
-        /* 可选：强制只接受 IPv4（如需支持 IPv6 去掉即可） */
-        if (addr.protocol() != QAbstractSocket::IPv4Protocol) {
-            qWarning() << "Only IPv4 is allowed";
+            emit connectionResult(false, tr("无效的主机名格式: %1").arg(hostName));
             return false;
         }
     }
 
-    /* 3. 如果 socket 还没断开，先断开再连 */
     if (tcpClientSocket->state() != QAbstractSocket::UnconnectedState) {
         tcpClientSocket->abort();
     }
 
-    /* 4. 真正发起连接（异步） */
     tcpClientSocket->connectToHost(hostName, port);
-    return true;   // 后续通过 connected()/errorOccurred() 信号判断结果
+
+    // 🔹等待连接 3 秒（可异步，也可同步）
+    if (!tcpClientSocket->waitForConnected(3000)) {
+        emit connectionResult(false, tr("连接超时或失败: %1").arg(tcpClientSocket->errorString()));
+        return false;
+    }
+
+    return true;
 }
 
 void TcpClientIOService::disconnectServer()
 {
-    tcpClientSocket->disconnectFromHost();
+    if (tcpClientSocket->state() != QAbstractSocket::UnconnectedState)
+        tcpClientSocket->disconnectFromHost();
 }
 
 void TcpClientIOService::sendBytes(QByteArray bytes)
 {
+    if (!tcpClientSocket->isOpen())
+        return;
     tcpClientSocket->write(bytes);
     emit sendBytesCount(bytes.length());
 }
@@ -64,14 +63,18 @@ void TcpClientIOService::sendBytes(QByteArray bytes)
 void TcpClientIOService::sendFile(QString fileName)
 {
     QFile file(fileName);
-    if(!file.open(QIODevice::ReadOnly)){
-        qDebug()<<"文件无法读取";
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "文件无法读取:" << fileName;
+        return;
     }
-    while(!file.atEnd()){
-        QByteArray bytes = file.read(256);
+
+    while (!file.atEnd()) {
+        QByteArray bytes = file.read(512);
         tcpClientSocket->write(bytes);
         emit sendBytesCount(bytes.length());
     }
+
+    file.close();
 
 }
 
@@ -84,14 +87,17 @@ void TcpClientIOService::onReadReady()
 
 void TcpClientIOService::connected_slot()
 {
-    qDebug()<<"成功连接服务器成功";
+    qDebug() << "成功连接服务器:" << tcpClientSocket->peerAddress().toString();
     emit getLocalPort(tcpClientSocket->localPort());
+    emit connectionResult(true, "连接成功");
 }
 
 void TcpClientIOService::disconnected_slot()
 {
-    qDebug()<<"退出断开成功";
+    qDebug() << "与服务器断开连接";
+    emit connectionResult(false, "已断开连接");
 }
+
 
 void TcpClientIOService::scanLocalAvlidAddr(QComboBox *cmb)
 {

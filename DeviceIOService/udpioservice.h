@@ -14,7 +14,7 @@ public:
     bool isUdpOpen           (void);
 
     void scanLocalAvlidAddr(QComboBox* cmb);
-    void bindAimAddressAndPort(QString aimAddr,QString aimPort,QString localAddr,QString localPort);
+    bool bindAimAddressAndPort(QString aimAddr,QString aimPort,QString localAddr,QString localPort);
     void sendBytes(QByteArray bytes);
     void udpClose();
 

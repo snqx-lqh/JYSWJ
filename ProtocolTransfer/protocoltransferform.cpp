@@ -7,14 +7,20 @@ ProtocolTransferForm::ProtocolTransferForm(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    QDir dir(QCoreApplication::applicationDirPath());
+    m_iniFile = dir.filePath("Config/settings.ini");
+
     connect(&MainTimer,&QTimer::timeout,this,&ProtocolTransferForm::onMainTimeout);
     MainTimer.setInterval(10);
 
     send_state = ProtocolTransferForm::IDLE;
+    ui->comboBox_HistoryFile->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLength);
+    loadSettings();
 }
 
 ProtocolTransferForm::~ProtocolTransferForm()
 {
+    saveSettings();
     delete ui;
 }
 
@@ -90,14 +96,46 @@ void ProtocolTransferForm::XmodemTransfer()
     // 将本次发送的数量进行记录，放到进度条
     XmodemSendCount += bytesToCopy;
     ui->progressBar->setValue(XmodemSendCount * 100/XmodeArray.size());
-
+    qDebug()<<"send:"<<packetNum * kPayload<<" all"<< XmodeArray.size();
     // 状态进入发送完成状态
-    if(packetNum * kPayload > XmodeArray.size())
+    if((int32_t)(packetNum * kPayload) > XmodeArray.size())
     {
         send_state = ProtocolTransferForm::XMODEM_SEND_ALL_FINISH;
     }else{
         send_state = ProtocolTransferForm::XMODEM_SEND_DOWN;
     }
+}
+
+void ProtocolTransferForm::loadSettings()
+{
+    QSettings settings(m_iniFile,QSettings::IniFormat);
+    settings.beginGroup("ProtocolTransferForm");
+
+    int History_Count = settings.value("History_Count",0).toInt();
+
+    for(int i=0;i<History_Count;i++){
+        QString temp = settings.value(QString("History_File%1").arg(i)).toString();
+        bool exists = QFileInfo::exists(temp);
+        if(exists)
+            ui->comboBox_HistoryFile->addItem(temp);
+    }
+    ui->cmb_SendMode->setCurrentText(settings.value("cmb_SendMode",ui->cmb_SendMode->currentText()).toString());
+    ui->comboBox_HistoryFile->setCurrentText(settings.value("History_File",ui->comboBox_HistoryFile->currentText()).toString());
+    settings.endGroup();
+}
+
+void ProtocolTransferForm::saveSettings()
+{
+    QSettings settings(m_iniFile,QSettings::IniFormat);
+    settings.beginGroup("ProtocolTransferForm");
+
+    settings.setValue("History_Count",ui->comboBox_HistoryFile->count());
+    settings.setValue("History_File",ui->comboBox_HistoryFile->currentText());
+    for(int i=0;i<ui->comboBox_HistoryFile->count();i++){
+        settings.setValue(QString("History_File%1").arg(i),ui->comboBox_HistoryFile->itemText(i));
+    }
+    settings.setValue("cmb_SendMode",ui->cmb_SendMode->currentText());
+    settings.endGroup();
 }
 
 void ProtocolTransferForm::onMainTimeout()
@@ -125,14 +163,15 @@ void ProtocolTransferForm::onReadBytes(QByteArray bytes)
 {
     if(startTransfer)
     {
+        qDebug()<<"Recv:"<<bytes;
         if(bytes[0] == 'C' && send_state == ProtocolTransferForm::IDLE){
             send_state = XMODEM_SEND;
             showMsg("green",QString("Start Send..."));
-        }else if(bytes[0] == 0x06 && send_state == ProtocolTransferForm::XMODEM_SEND_DOWN){
+        }else if((uint8_t)bytes[0] == 0x06 && send_state == ProtocolTransferForm::XMODEM_SEND_DOWN){
             send_state = XMODEM_SEND;
-        }else if(bytes[0] == 0x06 && send_state == ProtocolTransferForm::XMODEM_SEND_ALL_FINISH){
+        }else if((uint8_t)bytes[0] == 0x06 && send_state == ProtocolTransferForm::XMODEM_SEND_ALL_FINISH){
             send_state = XMODEM_SEND_SEND_EOT;
-        }else if(bytes[0] == 0x06 && send_state == ProtocolTransferForm::XMODEM_SEND_WAIT_EOT_ACK){
+        }else if((uint8_t)bytes[0] == 0x06 && send_state == ProtocolTransferForm::XMODEM_SEND_WAIT_EOT_ACK){
             send_state = IDLE;
             showMsg("green",QString("发送完成！"));
             startTransfer = false;
@@ -150,20 +189,26 @@ void ProtocolTransferForm::on_btn_CleanWindow_clicked()
 
 void ProtocolTransferForm::on_btn_selectFile_clicked()
 {
-    ui->le_FilePath->setText(QFileDialog::getOpenFileName(
-                                 this,                       // 父窗口
-                                 tr("选择文件"),             // 标题
-                                 lastDir,
-                                 tr("所有文件 (*);;文本文件 (*.txt)")  // 过滤器
-                             ));
-    lastDir = QFileInfo(ui->le_FilePath->text()).absolutePath();
+    QString SelectFile = QFileDialog::getOpenFileName(
+                this,                       // 父窗口
+                tr("选择文件"),             // 标题
+                lastDir,
+                tr("所有文件 (*);;文本文件 (*.txt)")  // 过滤器
+            );
+    if(SelectFile.isEmpty()) return;
+    ui->comboBox_HistoryFile->addItem(SelectFile);
+    ui->comboBox_HistoryFile->setCurrentText(SelectFile);
+    if(ui->comboBox_HistoryFile->count()>5){
+        ui->comboBox_HistoryFile->removeItem(0);
+    }
+    lastDir = QFileInfo(SelectFile).absolutePath();
 }
 
 
 void ProtocolTransferForm::on_btn_StartSend_clicked()
 {
 
-    file.setFileName(ui->le_FilePath->text());
+    file.setFileName(ui->comboBox_HistoryFile->currentText());
     if(!file.open(QIODevice::ReadOnly)){
         showMsg("green",QString("打开文件失败"));
         file.close();
@@ -171,7 +216,7 @@ void ProtocolTransferForm::on_btn_StartSend_clicked()
     }
     XmodeArray = file.readAll();
     file.close();
-    showMsg("green",QString("开始传输文件：%1").arg(ui->le_FilePath->text()));
+    showMsg("green",QString("开始传输文件：%1").arg(ui->comboBox_HistoryFile->currentText()));
     showMsg("green",QString("Wait C..."));
     startTransfer = true;
     send_state = ProtocolTransferForm::IDLE;
@@ -196,4 +241,6 @@ void ProtocolTransferForm::on_btn_CancelSend_clicked()
         showMsg("red",QString("取消传输"));
     }
 }
+
+
 
