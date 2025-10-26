@@ -27,6 +27,7 @@ public:
     void loadSettings();
     void saveSettings();
     QProgressBar *getProgressBar();
+
 public slots:
     void onStateChange(STATE_CHANGE_TYPE_T type,int state);
     void onReadBytes(QByteArray bytes);
@@ -46,6 +47,7 @@ private slots:
 signals:
     void sendBytes(QByteArray bytes);
     void sendFile(QString file);
+    void protocolStateChange(STATE_CHANGE_TYPE_T type,int state);
 
 private:
     Ui::SendAreaForm *ui;

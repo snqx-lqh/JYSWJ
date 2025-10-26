@@ -39,6 +39,10 @@ bool SerialIOService::isSerialOpen()
 
 void SerialIOService::sendBytes(QByteArray bytes)
 {
+    if(!serialPort->isOpen()){
+        QMessageBox::warning(nullptr,"提示","串口未打开");
+        return;
+    }
     serialPort->write(bytes);
     emit sendBytesCount(bytes.length());
 }

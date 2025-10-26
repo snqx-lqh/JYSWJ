@@ -10,11 +10,11 @@ ProtocolTransferForm::ProtocolTransferForm(QWidget *parent) :
     QDir dir(QCoreApplication::applicationDirPath());
     m_iniFile = dir.filePath("Config/settings.ini");
 
-    connect(&MainTimer,&QTimer::timeout,this,&ProtocolTransferForm::onMainTimeout);
-    MainTimer.setInterval(10);
-
-    send_state = ProtocolTransferForm::IDLE;
     ui->comboBox_HistoryFile->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLength);
+    connect(&mXmodem,&Xmodem::sendBytes,this,&ProtocolTransferForm::sendBytes);
+    connect(&mXmodem,&Xmodem::xmodemStateChange,this,&ProtocolTransferForm::onXmodemStateChange);
+    connect(this,&ProtocolTransferForm::xmodemStateChange,&mXmodem,&Xmodem::onXmodemStateChange);
+
     loadSettings();
 }
 
@@ -32,78 +32,6 @@ void ProtocolTransferForm::showMsg(QString color, QString msg)
     QString html = QStringLiteral("<font color=\"%1\">%2</font>")
                    .arg(color.toHtmlEscaped(), msg.toHtmlEscaped());
     ui->plainTextEdit->appendHtml(html);
-}
-
-quint16 ProtocolTransferForm::crc16_ccitt(const quint8 *ptr, qint32 len)
-{
-    unsigned int i;
-    unsigned short crc = 0x0000;
-
-    while(len--)
-    {
-        crc ^= (unsigned short)(*ptr++) << 8;
-        for (i = 0; i < 8; ++i)
-        {
-            if (crc & 0x8000)
-                crc = (crc << 1) ^ 0x1021;
-            else
-                crc <<= 1;
-        }
-    }
-
-    return crc;
-}
-
-
-void ProtocolTransferForm::XmodemTransfer()
-{
-    uint8_t buf[1034];  // 临时存储变量
-
-    if(ui->cmb_SendMode->currentText() == "Xmodem 128"){
-        kPayload   = 128;
-        buf[0] = 0x01;               // SOH
-    }else if(ui->cmb_SendMode->currentText() == "Xmodem 1024"){
-        kPayload   = 1024;
-        buf[0] = 0x02;               // STX
-    }
-
-    // 这是全局变量 从1到结束
-    packetNum++;
-    // 计算当前发送内容的偏移值
-    int offset = (packetNum - 1) * kPayload;
-    // 包序 和 包序反码
-    buf[1] = packetNum & 0xFF;
-    buf[2] = 0xFF - buf[1];
-    // 拷贝 1024 字节数据，不足时用 0x1A 填充
-    int bytesToCopy = qMin(kPayload, XmodeArray.size() - offset);
-    memcpy(buf + 3, XmodeArray.constData() + offset, bytesToCopy);
-    if (bytesToCopy < kPayload)
-        memset(buf + 3 + bytesToCopy, 0x1A, kPayload - bytesToCopy);
-
-    // CRC16 校验（放在包尾）
-    quint16 crc = crc16_ccitt(buf + 3, kPayload);
-    if(ui->cmb_SendMode->currentText() == "Xmodem 128"){
-        buf[131] = (crc >> 8) & 0xFF;
-        buf[132] =  crc       & 0xFF;
-    }else if(ui->cmb_SendMode->currentText() == "Xmodem 1024"){
-        buf[1027] = (crc >> 8) & 0xFF;
-        buf[1028] =  crc       & 0xFF;
-    }
-
-    // 发送本包
-    emit sendBytes(QByteArray(reinterpret_cast<const char*>(buf), kPayload+5));
-
-    // 将本次发送的数量进行记录，放到进度条
-    XmodemSendCount += bytesToCopy;
-    ui->progressBar->setValue(XmodemSendCount * 100/XmodeArray.size());
-    qDebug()<<"send:"<<packetNum * kPayload<<" all"<< XmodeArray.size();
-    // 状态进入发送完成状态
-    if((int32_t)(packetNum * kPayload) > XmodeArray.size())
-    {
-        send_state = ProtocolTransferForm::XMODEM_SEND_ALL_FINISH;
-    }else{
-        send_state = ProtocolTransferForm::XMODEM_SEND_DOWN;
-    }
 }
 
 void ProtocolTransferForm::loadSettings()
@@ -138,46 +66,35 @@ void ProtocolTransferForm::saveSettings()
     settings.endGroup();
 }
 
-void ProtocolTransferForm::onMainTimeout()
-{
-    switch (send_state) {
-    case ProtocolTransferForm::IDLE:
-        break;
-    case ProtocolTransferForm::XMODEM_SEND:
-        XmodemTransfer();
-        break;
-    case ProtocolTransferForm::XMODEM_SEND_SEND_EOT:
-        {
-            QByteArray bytes;
-            bytes.append(0x04);
-            emit sendBytes(bytes);
-            send_state = XMODEM_SEND_WAIT_EOT_ACK;
-            break;
-        }
-    default:
-        break;
-    }
-}
 
 void ProtocolTransferForm::onReadBytes(QByteArray bytes)
 {
-    if(startTransfer)
-    {
-        qDebug()<<"Recv:"<<bytes;
-        if(bytes[0] == 'C' && send_state == ProtocolTransferForm::IDLE){
-            send_state = XMODEM_SEND;
-            showMsg("green",QString("Start Send..."));
-        }else if((uint8_t)bytes[0] == 0x06 && send_state == ProtocolTransferForm::XMODEM_SEND_DOWN){
-            send_state = XMODEM_SEND;
-        }else if((uint8_t)bytes[0] == 0x06 && send_state == ProtocolTransferForm::XMODEM_SEND_ALL_FINISH){
-            send_state = XMODEM_SEND_SEND_EOT;
-        }else if((uint8_t)bytes[0] == 0x06 && send_state == ProtocolTransferForm::XMODEM_SEND_WAIT_EOT_ACK){
-            send_state = IDLE;
-            showMsg("green",QString("发送完成！"));
-            startTransfer = false;
-            MainTimer.stop();
-            ui->progressBar->setValue(0);
+    mXmodem.onReadBytes(bytes);
+}
+
+void ProtocolTransferForm::onProtocolStateChange(STATE_CHANGE_TYPE_T type, int state)
+{
+    if(type == IOConnect_State){
+        emit xmodemStateChange(Xmodem::IOConnectState,QString::number(state));
+    }
+}
+
+void ProtocolTransferForm::onXmodemStateChange(Xmodem::XmodemState type, QString state)
+{
+    if(type == Xmodem::SendPercent){
+        ui->progressBar->setValue(state.toFloat());
+    }else if(type == Xmodem::SendInfo){
+        showMsg("green",state);
+    }else if(type == Xmodem::SendTransferState){
+        if(state == "1"){
+            showMsg("green","传输完成");
+        }else if(state == QString("DisConnected")){
+            showMsg("red","退出传输，通信IO连接失败！");
         }
+        ui->comboBox_HistoryFile->setEnabled(true);
+        ui->cmb_SendMode->setEnabled(true);
+        ui->btn_selectFile->setEnabled(true);
+        ui->btn_StartSend->setEnabled(true);
     }
 }
 
@@ -201,45 +118,36 @@ void ProtocolTransferForm::on_btn_selectFile_clicked()
     if(ui->comboBox_HistoryFile->count()>5){
         ui->comboBox_HistoryFile->removeItem(0);
     }
-    lastDir = QFileInfo(SelectFile).absolutePath();
+    lastDir = QFileInfo(ui->comboBox_HistoryFile->currentText()).absolutePath();
 }
 
 
 void ProtocolTransferForm::on_btn_StartSend_clicked()
 {
-
-    file.setFileName(ui->comboBox_HistoryFile->currentText());
-    if(!file.open(QIODevice::ReadOnly)){
-        showMsg("green",QString("打开文件失败"));
-        file.close();
-        return;
+    ProtocolMethod = ui->cmb_SendMode->currentText();
+    SendFilePath   = ui->comboBox_HistoryFile->currentText();
+    if(ProtocolMethod == "Xmodem 128" || ProtocolMethod == "Xmodem 1024")
+    {
+        mXmodem.StartSendXmodem(ProtocolMethod,SendFilePath);
     }
-    XmodeArray = file.readAll();
-    file.close();
-    showMsg("green",QString("开始传输文件：%1").arg(ui->comboBox_HistoryFile->currentText()));
-    showMsg("green",QString("Wait C..."));
-    startTransfer = true;
-    send_state = ProtocolTransferForm::IDLE;
-    MainTimer.start();
-    XmodemSendCount = 0;
-    packetNum = 0;
+
+    ui->comboBox_HistoryFile->setEnabled(false);
+    ui->cmb_SendMode->setEnabled(false);
+    ui->btn_selectFile->setEnabled(false);
+    ui->btn_StartSend->setEnabled(false);
 }
 
 
 void ProtocolTransferForm::on_btn_CancelSend_clicked()
 {
-    if(startTransfer == true){
-        startTransfer = false;
-        MainTimer.stop();
-        QByteArray bytes;
-        bytes.append(0x18);
-        emit sendBytes(bytes);
-        XmodemSendCount = 0;
-        packetNum = 0;
-        ui->progressBar->setValue(0);
-        send_state = ProtocolTransferForm::IDLE;
-        showMsg("red",QString("取消传输"));
+    if(ProtocolMethod == "Xmodem 128" || ProtocolMethod == "Xmodem 1024")
+    {
+        mXmodem.CancelSendXmodem();
     }
+    ui->comboBox_HistoryFile->setEnabled(true);
+    ui->cmb_SendMode->setEnabled(true);
+    ui->btn_selectFile->setEnabled(true);
+    ui->btn_StartSend->setEnabled(true);
 }
 
 

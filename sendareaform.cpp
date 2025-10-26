@@ -14,6 +14,8 @@ SendAreaForm::SendAreaForm(QWidget *parent) :
     ui->tabWidget->addTab(&mFileConvertForm,"文件转换");
 
     connect(&mProtocolTransferForm,&ProtocolTransferForm::sendBytes,this,&SendAreaForm::sendBytes);
+    connect(this,&SendAreaForm::protocolStateChange,&mProtocolTransferForm,&ProtocolTransferForm::onProtocolStateChange);
+
     SendCycleTimer = new QTimer;
     connect(SendCycleTimer,&QTimer::timeout,this,[this](){
         on_pushButton_Send_clicked();
@@ -73,8 +75,13 @@ QProgressBar *SendAreaForm::getProgressBar()
 void SendAreaForm::onStateChange(STATE_CHANGE_TYPE_T type, int state)
 {
     if(type == IOConnect_State){
-        if(state == 0) connectState = false;
-        else connectState = true;
+        if(state == 0){
+            connectState = false;
+        }
+        else {
+            connectState = true;
+        }
+        emit protocolStateChange(IOConnect_State,state);
     }else if(type == IOSendNewLine_State){
         if(state == 0) sendNewLineState = false;
         else sendNewLineState = true;
@@ -156,15 +163,12 @@ void SendAreaForm::on_pushButton_SendFile_clicked()
     emit sendFile(ui->comboBox_HistoryFile->currentText());
 }
 
-
-
-
-
 void SendAreaForm::on_checkBox_SendCycle_stateChanged(int arg1)
 {
     if(2 == arg1){
         if(connectState == false){
             QMessageBox::warning(nullptr,"警告","通信IO未连接");
+            SendCycleTimer->stop();
             ui->checkBox_SendCycle->setChecked(false);
             return;
         }

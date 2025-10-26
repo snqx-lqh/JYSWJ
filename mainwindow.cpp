@@ -7,7 +7,11 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle("简易上位机 V2.0.0");
+    setWindowTitle("简易上位机 V2.0.1");
+
+    QDir dir(QCoreApplication::applicationDirPath());
+    mIniFile = dir.filePath("Config/settings.ini");
+
     ui->splitter_2->setSizes({6500,3500});
 //    ui->splitter_2->setStretchFactor(0, 1);
 //    ui->splitter_2->setStretchFactor(1, 2);
@@ -20,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->widget_IOSetting,&IOSettingsForm::stateChange,ui->widget_Recv,&RecvAreaForm::onStateChange);
     connect(ui->widget_IOSetting,&IOSettingsForm::stateChange,ui->widget_MultiSend,&MultiSendForm::onStateChange);
     connect(ui->widget_IOSetting,&IOSettingsForm::stateChange,ui->widget_state,&StateForm::onStateChange);
+
     connect(ui->widget_IOSetting,&IOSettingsForm::connectInfo,ui->widget_state,&StateForm::onConnectInfo);
     connect(ui->widget_IOSetting,&IOSettingsForm::readBytes,ui->widget_Recv,&RecvAreaForm::onReadBytes);
     connect(ui->widget_IOSetting,&IOSettingsForm::readBytes,ui->widget_Send,&SendAreaForm::onReadBytes);
@@ -33,18 +38,44 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->widget_MultiSend,&MultiSendForm::sendBytes,ui->widget_IOSetting,&IOSettingsForm::onSendBytes);
 
     ui->widget_IOSetting->stateInit();
+    ui->widget_ToolBar->stateInit();
 
     ui->widget_ToolBar->setMinimumWidth(38);
     ui->widget_ToolBar->setMaximumWidth(38);
     ui->widget_IOSetting->setMinimumWidth(210);
     ui->widget_IOSetting->setMaximumWidth(210);
 
-
+    loadSettings();
 }
 
 MainWindow::~MainWindow()
 {
+    saveSettings();
     delete ui;
+}
+
+void MainWindow::loadSettings()
+{
+    QSettings settings(mIniFile,QSettings::IniFormat);
+    settings.beginGroup("MainWindow");
+
+    auto widthTemp           = settings.value("widthTemp","1200");
+    auto heightTemp          = settings.value("heightTemp","700");
+
+    settings.endGroup();
+    qDebug()<<QString("size %1 %2").arg(widthTemp.toInt()).arg(heightTemp.toInt());
+    resize(QSize(widthTemp.toInt(), heightTemp.toInt()));
+}
+
+void MainWindow::saveSettings()
+{
+    QSettings settings(mIniFile,QSettings::IniFormat);
+    settings.beginGroup("MainWindow");
+
+    settings.setValue("widthTemp", this->size().width());
+    settings.setValue("heightTemp", this->size().height());
+    qDebug()<<QString("size %1 %2").arg(this->size().width()).arg(this->size().height());
+    settings.endGroup();
 }
 
 void MainWindow::onStateChange(STATE_CHANGE_TYPE_T type, int state)
@@ -56,14 +87,11 @@ void MainWindow::onStateChange(STATE_CHANGE_TYPE_T type, int state)
         bool stateTemp = (state==0?false:true);
         ui->widget_MultiSend->setVisible(stateTemp);
     }
-    qDebug()<<ui->widget_IOSetting->width();
-    qDebug()<<size();
 }
 
 
 void MainWindow::on_actionIntro_triggered()
 {
-    qDebug()<<"介绍被点击";
     mVersionIntroductionForm.show();
 }
 

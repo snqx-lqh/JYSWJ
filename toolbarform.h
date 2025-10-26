@@ -5,6 +5,8 @@
 #include <QIcon>
 #include "common.h"
 #include <QDebug>
+#include <QSettings>
+#include <QDir>
 
 namespace Ui {
 class ToolBarForm;
@@ -17,6 +19,10 @@ class ToolBarForm : public QWidget
 public:
     explicit ToolBarForm(QWidget *parent = nullptr);
     ~ToolBarForm();
+
+    void loadSettings();
+    void saveSettings();
+    void stateInit();
 
 public slots:
     void onStateChange(STATE_CHANGE_TYPE_T type,int state);
@@ -39,6 +45,7 @@ private:
 
     bool expandState = true;
     bool multiSendState = true;
+    QString         mIniFile;
 };
 
 #endif // TOOLBARFORM_H

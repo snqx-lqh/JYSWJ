@@ -7,6 +7,10 @@ ToolBarForm::ToolBarForm(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    QDir dir(QCoreApplication::applicationDirPath());
+    mIniFile = dir.filePath("Config/settings.ini");
+
+
     iconExpand.addFile(":/images/images/expand.png");
     iconConnect.addFile(":/images/images/connect.png");
     iconDisconnect.addFile(":/images/images/disconnect.png");
@@ -32,13 +36,12 @@ ToolBarForm::ToolBarForm(QWidget *parent) :
     ui->pushButton_MultiSend->setToolTip("多字符发送");
     ui->pushButton_MultiSend->setCursor(Qt::PointingHandCursor);
 
-
-
-
+    loadSettings();
 }
 
 ToolBarForm::~ToolBarForm()
 {
+    saveSettings();
     delete ui;
 }
 
@@ -74,3 +77,32 @@ void ToolBarForm::on_pushButton_MultiSend_clicked()
     emit stateChange(MULTISEND_VISIBLE,multiSendState);
 }
 
+void ToolBarForm::loadSettings()
+{
+    QSettings settings(mIniFile,QSettings::IniFormat);
+    settings.beginGroup("ToolBarForm");
+
+    auto expandStateTemp        = settings.value("expandState","false");
+    auto multiSendStateTemp        = settings.value("multiSendState","false");
+
+    settings.endGroup();
+
+    expandState = expandStateTemp.toBool();
+    multiSendState = multiSendStateTemp.toBool();
+}
+
+void ToolBarForm::saveSettings()
+{
+    QSettings settings(mIniFile,QSettings::IniFormat);
+    settings.beginGroup("ToolBarForm");
+
+    settings.setValue("expandState", expandState);
+    settings.setValue("multiSendState", multiSendState);
+    settings.endGroup();
+}
+
+void ToolBarForm::stateInit()
+{
+    emit stateChange(IOSETTING_VISIBLE,expandState);
+    emit stateChange(MULTISEND_VISIBLE,multiSendState);
+}

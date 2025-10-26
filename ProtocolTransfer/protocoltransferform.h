@@ -12,7 +12,8 @@
 #include <QSettings>
 #include <QDir>
 #include <QDebug>
-
+#include "common.h"
+#include "xmodem.h"
 
 namespace Ui {
 class ProtocolTransferForm;
@@ -38,15 +39,14 @@ public:
 
     void showMsg(QString color,QString msg);
 
-    quint16 crc16_ccitt(const quint8 *ptr, qint32 len);
-    void XmodemTransfer();
-
     void loadSettings();
     void saveSettings();
 
 public slots:
-    void onMainTimeout();
     void onReadBytes(QByteArray bytes);
+    void onProtocolStateChange(STATE_CHANGE_TYPE_T type,int state);
+    void onXmodemStateChange(Xmodem::XmodemState type,QString state);
+
 
 private slots:
     void on_btn_CleanWindow_clicked();
@@ -59,23 +59,17 @@ private slots:
 
 signals:
     void sendBytes(QByteArray bytes);
-
+    void xmodemStateChange(Xmodem::XmodemState type,QString state);
 
 private:
     Ui::ProtocolTransferForm *ui;
 
     QString lastDir = ".";
-
-    QTimer MainTimer;
-    bool   startTransfer = false;
-    QFile file;
-    QByteArray XmodeArray;
-    qint32     MainTimerCount = 0;
-    qint32     XmodemSendCount = 0;
-    uint32_t   packetNum = 0;          // 第一包序号从 1 开始
-    int        kPayload   = 0;       // 一帧中的数据实际有效数据量
-    SEND_STATE send_state;
     QString    m_iniFile;
+    Xmodem     mXmodem;
+
+    QString ProtocolMethod = ""; ///< 协议名
+    QString SendFilePath   = ""; ///< 发送文件路径
 };
 
 #endif // PROTOCOLTRANSFERFORM_H

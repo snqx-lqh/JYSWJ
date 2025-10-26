@@ -6,6 +6,7 @@
 #include <QListWidget>
 #include "common.h"
 #include "versionintroductionform.h"
+#include <QSettings>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -19,6 +20,9 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void loadSettings();
+    void saveSettings();
+
 public slots:
     void onStateChange(STATE_CHANGE_TYPE_T type,int state);
 private slots:
@@ -28,6 +32,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    QString         mIniFile;
     VersionIntroductionForm mVersionIntroductionForm;
 };
 #endif // MAINWINDOW_H

@@ -140,6 +140,12 @@ void MultiSendForm::sendText(MultiSendItem item)
 
 void MultiSendForm::onMultiSendCycleTimerOut()
 {
+    if(connectState == false){
+        QMessageBox::warning(nullptr,"警告","通信IO未连接");
+        ui->checkBox_CycleSend->setChecked(false);
+        MultiSendCycleTimer->stop();
+        return;
+    }
     if (!txQueue.isEmpty())
     {
         MultiSendItem temp;
