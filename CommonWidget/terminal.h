@@ -6,6 +6,13 @@
 #include <QDebug>
 #include <QTextCodec>
 #include <QDateTime>
+#include <QPainter>
+#include <QMenu>
+#include <QClipboard>
+#include <QApplication>
+#include <QTextCursor>
+#include <QTextDocument>
+#include <QTextBlock>
 
 class Terminal : public QPlainTextEdit
 {
@@ -30,10 +37,18 @@ public:
     void setShowHexState(bool state);
     void setShowDateState(bool state);
 
-//    void mousePressEvent(QMouseEvent *event)override;
-//    void mouseMoveEvent(QMouseEvent *event)override;
-//    void mouseReleaseEvent(QMouseEvent *event)override;
-//    void keepPos();
+    // 重写选择相关方法
+    void setSelection(int start, int end);
+    void clearSelection();
+    QString getSelectedText() const;
+    void paintEvent(QPaintEvent *e) override;
+    void mousePressEvent(QMouseEvent *event)override;
+    void mouseMoveEvent(QMouseEvent *event)override;
+    void mouseReleaseEvent(QMouseEvent *event)override;
+    void contextMenuEvent(QContextMenuEvent *e) override;  // 新增：右键菜单事件
+    void copy(void);
+    void paste(void);
+
 private:
     QTextCodec *m_codec = nullptr;                      // 当前使用的编码
     bool mShowHexState  = false;
@@ -55,8 +70,17 @@ private:
 
     KeyState keyState = KEY_NORMAL_STATE;
 
-//    int m_forbiddenPos = 0;   // 禁止鼠标移动到的位置
-//    int m_basePos = 0;
+     struct CustomSelection {
+         int start;
+         int end;
+         bool active;
+     };
+
+     CustomSelection m_customSelection;
+     QTextCursor m_fixedCursor;  // 固定的输入光标
+     bool m_isSelecting    = false;
+     int m_selectionAnchor = 0;
+
 signals:
     void sendBytes(QByteArray bytes);
 

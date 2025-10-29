@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle("简易上位机 V2.0.1");
+    setWindowTitle("简易上位机 V2.0.2");
 
     QDir dir(QCoreApplication::applicationDirPath());
     mIniFile = dir.filePath("Config/settings.ini");

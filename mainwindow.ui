@@ -184,7 +184,10 @@
      <normaloff>:/images/images/versionInfo.png</normaloff>:/images/images/versionInfo.png</iconset>
    </property>
    <property name="text">
-    <string>版本简介</string>
+    <string>软件简介</string>
+   </property>
+   <property name="toolTip">
+    <string>软件简介</string>
    </property>
   </action>
  </widget>

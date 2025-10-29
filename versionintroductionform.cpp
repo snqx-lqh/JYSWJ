@@ -6,6 +6,7 @@ VersionIntroductionForm::VersionIntroductionForm(QWidget *parent) :
     ui(new Ui::VersionIntroductionForm)
 {
     ui->setupUi(this);
+    setWindowTitle("软件简介");
 }
 
 VersionIntroductionForm::~VersionIntroductionForm()

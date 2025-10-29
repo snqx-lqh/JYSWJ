@@ -11,6 +11,7 @@ Terminal::Terminal( QWidget *parent)
     setContentsMargins(0,0,0,0);
 
     m_codec = QTextCodec::codecForName("UTF-8");
+    m_fixedCursor = textCursor();
 }
 
 
@@ -157,6 +158,8 @@ void Terminal::setShowDateState(bool state)
     mShowDateState = state;
 }
 
+
+
 void Terminal::onReadBytes(QByteArray bytes)
 {
     appendData(bytes);
@@ -203,42 +206,105 @@ void Terminal::insertFromMimeData(const QMimeData *source)
         emit sendBytes(source->text().toUtf8());
 }
 
-//void Terminal::mousePressEvent(QMouseEvent *ev)
-//{
-//    // 1. 让 Qt 正常处理选区、复制、滚轮、右键菜单……
-//    QPlainTextEdit::mousePressEvent(ev);
 
-//    // 2. 再把光标拉回原位，等于“禁止鼠标改 POS”
-//    QTextCursor cur = textCursor();
-//    cur.setPosition(m_forbiddenPos);   // 你上次记录的位置
-//    setTextCursor(cur);
-//}
+void Terminal::mousePressEvent(QMouseEvent *e)
+{
+    if (e->button() == Qt::LeftButton) {
+        int pos = cursorForPosition(e->pos()).position();
+        m_customSelection.start = m_customSelection.end = pos;
+        m_customSelection.active = true;
+        viewport()->update();          // 触发重绘
+    }
+}
+
+void Terminal::mouseMoveEvent(QMouseEvent *e)
+{
+    if (!m_customSelection.active) return;
+    m_customSelection.end = cursorForPosition(e->pos()).position();
+    viewport()->update();
+}
+
+void Terminal::mouseReleaseEvent(QMouseEvent *e)
+{
+    if (e->button() == Qt::LeftButton) {
+        m_customSelection.active = false;
+        viewport()->update();
+    }
+}
+
+void Terminal::paintEvent(QPaintEvent *e)
+{
+    // 先让 Qt 画完文本、光标、行号等
+    QPlainTextEdit::paintEvent(e);
+
+    if (m_customSelection.start < 0 || m_customSelection.end < 0) return;
+
+    // 保证 start <= end
+    int start = qMin(m_customSelection.start, m_customSelection.end);
+    int end = qMax(m_customSelection.start, m_customSelection.end);
+
+    QPainter p(viewport());
+    p.setBrush(QColor(0,120,215,80));   // 半透明蓝色
+    p.setPen(Qt::NoPen);
+
+    // 把字符范围换算成矩形列表
+    QTextCursor cur(document());
+    cur.setPosition(start);
+    QTextCursor curE(document());
+    curE.setPosition(end);
+
+    QRect r1 = cursorRect(cur);
+    QRect r2 = cursorRect(curE);
+
+    if (r1.top() == r2.top()) {          // 同一行
+        p.drawRect(r1.left(), r1.top(), r2.right() - r1.left(), r1.height());
+    } else {                             // 多行
+        // 首行剩余部分
+        p.drawRect(r1.left(), r1.top(), viewport()->width() - r1.left(), r1.height());
+        // 中间完整行
+        for (int block = cur.blockNumber() + 1; block < curE.blockNumber(); ++block)
+            p.drawRect(0, cursorRect(QTextCursor(document()->findBlockByNumber(block))).top(),
+                       viewport()->width(), fontMetrics().height());
+        // 末行开头部分
+        p.drawRect(0, r2.top(), r2.right(), r2.height());
+    }
+}
+
+void Terminal::copy()
+{
+    qDebug()<<"in copy";
+    if (m_customSelection.start < 0 || m_customSelection.end < 0) return;
+    int s = qMin(m_customSelection.start, m_customSelection.end);
+    int e = qMax(m_customSelection.start, m_customSelection.end);
+    QTextCursor cur(document());
+    cur.setPosition(s);
+    cur.setPosition(e, QTextCursor::KeepAnchor);
+    QApplication::clipboard()->setText(cur.selectedText());
+}
+
+void Terminal::paste()
+{
+    QString text = QApplication::clipboard()->text();
+    if (text.isEmpty()) return;
+
+    // 在“真实光标”处插入
+//    QTextCursor cur = m_fixedCursor;   // 你之前保存的“禁止移动”光标
+//    cur.insertText(text);
+//    setTextCursor(cur);                // 更新光标位置到插入之后
+//    m_fixedCursor = cur;               // 记录新位置
+
+    const QMimeData *md = QApplication::clipboard()->mimeData();
+    insertFromMimeData(md);           // ← 最终只会调这里
+}
+
+void Terminal::contextMenuEvent(QContextMenuEvent *e)
+{
+    Q_UNUSED(e);
+    QMenu menu(this);
+    menu.addAction("复制", this, &Terminal::copy);
+    menu.addAction("粘贴", this, &Terminal::paste);
+    menu.exec(QCursor::pos());
+}
 
 
-//void Terminal::mousePressEvent(QMouseEvent *ev)
-//{
-////    m_basePos = textCursor().position();   // 1. 记录“老位置”
-////    QPlainTextEdit::mousePressEvent(ev);   // 2. 让 Qt 做选区/复制
-////    keepPos();                             // 3. 把光标拉回
-//}
 
-//void Terminal::mouseMoveEvent(QMouseEvent *ev)
-//{
-////    QPlainTextEdit::mouseMoveEvent(ev);    // 继续扩大选区
-////    keepPos();                             // 实时锁住 POS
-//}
-
-//void Terminal::mouseReleaseEvent(QMouseEvent *ev)
-//{
-////    QPlainTextEdit::mouseReleaseEvent(ev);
-////    keepPos();
-//}
-
-//void Terminal::keepPos()
-//{
-//    QTextCursor cur = textCursor();
-//    int nowPos = cur.position();                  // 鼠标当前位置（终点）
-//    cur.setPosition(m_basePos);                   // 固定起点
-//    cur.setPosition(nowPos, QTextCursor::KeepAnchor); // 保留终点
-//    setTextCursor(cur);                           // 只更新选区，不移动 POS
-//}
