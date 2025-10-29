@@ -73,7 +73,8 @@ void Terminal::appendData(const QByteArray &ba)
                     keyState = KEY_DOWN_STATE;
                 }else if(m_expectLeftEcho){
                     keyState = KEY_LEFT_STATE;
-                    m_expectLeftEcho = false;
+                }else if(m_expectRightEcho){
+                    keyState = KEY_RIGHT_STATE;
                 }else{
                     keyState = KEY_BACK_STATE;
                 }
@@ -102,20 +103,22 @@ void Terminal::appendData(const QByteArray &ba)
                     keyState = KEY_NORMAL_STATE;
                 }
             }
-
             if (keyState == KEY_UP_STATE || keyState == KEY_DOWN_STATE) {
                 if(ch == 0x20){
                     cur.deleteChar();
                 }else{
-                    m_expectUpEcho   = false;
-                    m_expectDownEcho = false;
                     keyState = KEY_NORMAL_STATE;
                 }
             }
-            if(m_expectRightEcho){
+
+            if (keyState == KEY_LEFT_STATE) {
                 cur.deleteChar();
-                m_expectRightEcho = false;
             }
+
+            if(keyState == KEY_RIGHT_STATE){
+                cur.deleteChar();
+            }
+
             cur.insertText(ch);
         }
     }
@@ -158,8 +161,6 @@ void Terminal::setShowDateState(bool state)
     mShowDateState = state;
 }
 
-
-
 void Terminal::onReadBytes(QByteArray bytes)
 {
     appendData(bytes);
@@ -170,10 +171,34 @@ void Terminal::keyPressEvent(QKeyEvent *ev)
     QByteArray bytes;
 
     switch (ev->key()) {
-    case Qt::Key_Up:        bytes = "\x1B[A"; m_expectUpEcho    = true;break;
-    case Qt::Key_Down:      bytes = "\x1B[B"; m_expectDownEcho  = true;break;
-    case Qt::Key_Right:     bytes = "\x1B[C"; m_expectRightEcho = true;break;
-    case Qt::Key_Left:      bytes = "\x1B[D"; m_expectLeftEcho  = true;break;
+    case Qt::Key_Up:
+        bytes = "\x1B[A";
+        m_expectUpEcho    = true;
+        m_expectDownEcho  = false;
+        m_expectRightEcho = false;
+        m_expectLeftEcho  = false;
+        break;
+    case Qt::Key_Down:
+        bytes = "\x1B[B";
+        m_expectUpEcho    = false;
+        m_expectDownEcho  = true;
+        m_expectRightEcho = false;
+        m_expectLeftEcho  = false;
+        break;
+    case Qt::Key_Right:
+        bytes = "\x1B[C";
+        m_expectUpEcho    = false;
+        m_expectDownEcho  = false;
+        m_expectRightEcho = true;
+        m_expectLeftEcho  = false;
+        break;
+    case Qt::Key_Left:
+        bytes = "\x1B[D";
+        m_expectUpEcho    = false;
+        m_expectDownEcho  = false;
+        m_expectRightEcho = false;
+        m_expectLeftEcho  = true;
+        break;
     case Qt::Key_Backspace: bytes = QByteArray(1, '\b');m_expectEnterEcho = true;break;  // 有些系统是 '\b'
     case Qt::Key_Tab:       bytes = QByteArray(1, '\t'); break;    // Tab
     case Qt::Key_Return:
