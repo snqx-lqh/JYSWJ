@@ -129,7 +129,8 @@ void SendAreaForm::on_pushButton_Send_clicked()
         return;
     }
     QString text = ui->plainTextEdit->toPlainText();
-    text.replace("\\r","\r").replace("\\n","\n");
+    //text.replace("\\r","\r").replace("\\n","\n");
+    text.replace("\n","\r\n");
     if (ui->checkBox_HexSend->isChecked()) {
         // 1. 按十六进制发送
         QByteArray bytes = QByteArray::fromHex(

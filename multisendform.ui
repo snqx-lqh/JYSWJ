@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>276</width>
+    <width>369</width>
     <height>488</height>
    </rect>
   </property>
@@ -59,6 +59,13 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="checkBox_SendNewLine">
+          <property name="text">
+           <string>新行</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <spacer name="horizontalSpacer">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -103,7 +110,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>262</width>
+           <width>355</width>
            <height>443</height>
           </rect>
          </property>

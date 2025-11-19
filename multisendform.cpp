@@ -13,6 +13,11 @@ MultiSendForm::MultiSendForm(QWidget *parent) :
     UiInit();
     loadSettings();
 
+    QSettings settings(mIniFile,QSettings::IniFormat);
+    settings.beginGroup("MultiSendFormSettings");
+    ui->checkBox_SendNewLine->setChecked(settings.value("checkBox_SendNewLine","false").toBool());
+    settings.endGroup();
+
     ui->comboBox_IniFile->addItem("default.ini");
 
     QString iniFilePath = dir.filePath("Config/多字符配置文件");
@@ -34,6 +39,12 @@ MultiSendForm::MultiSendForm(QWidget *parent) :
 MultiSendForm::~MultiSendForm()
 {
     saveSettings();
+
+    QSettings settings(mIniFile,QSettings::IniFormat);
+    settings.beginGroup("MultiSendFormSettings");
+    settings.setValue(QString("checkBox_SendNewLine"),ui->checkBox_SendNewLine->isChecked());
+    settings.endGroup();
+
     delete ui;
 }
 
@@ -115,7 +126,7 @@ void MultiSendForm::sendText(MultiSendItem item)
         // 1. 按十六进制发送
         QByteArray bytes = QByteArray::fromHex(
                                text.toUtf8().simplified());   // 去掉空格、回车
-        if(sendNewLineState) {
+        if(ui->checkBox_SendNewLine->isChecked()) {
             bytes.append(0x0D);
             bytes.append(0x0A);
         }
@@ -130,7 +141,7 @@ void MultiSendForm::sendText(MultiSendItem item)
         } else if (TextCodeC == "UTF-8"){
             bytes = text.toUtf8();                 // UTF-8
         }
-        if(sendNewLineState) {
+        if(ui->checkBox_SendNewLine->isChecked()) {
             bytes.append(0x0D);
             bytes.append(0x0A);
         }

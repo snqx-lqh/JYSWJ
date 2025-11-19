@@ -47,8 +47,8 @@ public slots:
     void onProtocolSendBytes(QByteArray bytes);
     void onSendFile(QString filePath);
     void onStateChange(STATE_CHANGE_TYPE_T type,int state);
-    void onSendCountChanged(uint32_t count);
-    void onRecvCountChanged(uint32_t count);
+    void onSendCountChanged(quint32 count);
+    void onRecvCountChanged(quint32 count);
 
 signals:
     void readBytes(QByteArray bytes);
@@ -67,18 +67,6 @@ private slots:
 
     void on_comboBox_Parity_currentTextChanged(const QString &arg1);
 
-    void on_checkBox_HexShow_stateChanged(int arg1);
-
-    void on_checkBox_DateTime_stateChanged(int arg1);
-
-    void on_checkBox_SendNewLine_stateChanged(int arg1);
-
-    void on_pushButton_ClearRecv_clicked();
-
-    void on_checkBox_RecvToFile_stateChanged(int arg1);
-
-    void on_comboBox_Codec_currentIndexChanged(int index);
-
 private:
     Ui::IOSettingsForm *ui;
 
@@ -91,6 +79,8 @@ private:
     ConnectMode connectMode = None;
     QFile receiveFile;
     QTextStream receiveTextStream;
+    QThread mThread;
+    bool showSendStr = false;
 };
 
 #endif // IOSETTINGSFORM_H

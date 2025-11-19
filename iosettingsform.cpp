@@ -69,8 +69,7 @@ IOSettingsForm::IOSettingsForm(QWidget *parent) :
         qDebug()<<"sucess:"<<success<<" message"<<message;
     });
 
-    ui->comboBox_Codec->addItem("GBK");
-    ui->comboBox_Codec->addItem("UTF-8");
+    ui->pushButton_Setting->setVisible(false);
 
     loadSettings();
 
@@ -93,10 +92,10 @@ void IOSettingsForm::loadSettings()
     auto DataBits        = settings.value("DataBits","8");
     auto StopBits        = settings.value("StopBits","1");
     auto Parity          = settings.value("Parity","None");
-    auto SendNewLine        = settings.value("SendNewLine","false");
+    auto SendNewLine     = settings.value("SendNewLine","false");
     auto SendShow        = settings.value("SendShow","false");
-    auto HexShow          = settings.value("HexShow","false");
-    auto DateTime          = settings.value("DateTime","false");
+    auto HexShow         = settings.value("HexShow","false");
+    auto DateTime        = settings.value("DateTime","false");
 
     auto cmb_tcpClientLocalAddr        = settings.value("cmb_tcpClientLocalAddr",ui->cmb_tcpClientLocalAddr->currentText());
     auto le_tcpClientAimAddr          = settings.value("le_tcpClientAimAddr",ui->le_tcpClientAimAddr->text());
@@ -110,8 +109,6 @@ void IOSettingsForm::loadSettings()
     auto le_UdpAimAddr          = settings.value("le_UdpAimAddr",ui->le_UdpAimAddr->text());
     auto le_UdpAimPort          = settings.value("le_UdpAimPort",ui->le_UdpAimPort->text());
 
-    auto comboBox_Codec         = settings.value("comboBox_Codec",ui->comboBox_Codec->currentText());
-
     settings.endGroup();
 
     ui->comboBox_PortName->setCurrentText(PortName.toString());
@@ -119,10 +116,6 @@ void IOSettingsForm::loadSettings()
     ui->comboBox_DataBits->setCurrentText(DataBits.toString());
     ui->comboBox_StopBits->setCurrentText(StopBits.toString());
     ui->comboBox_Parity->setCurrentText(Parity.toString());
-    ui->checkBox_SendNewLine->setChecked(SendNewLine.toBool());
-    ui->checkBox_SendShow->setChecked(SendShow.toBool());
-    ui->checkBox_HexShow->setChecked(HexShow.toBool());
-    ui->checkBox_DateTime->setChecked(DateTime.toBool());
 
     ui->cmb_tcpClientLocalAddr->setCurrentText(cmb_tcpClientLocalAddr.toString());
     ui->le_tcpClientAimAddr->setText(le_tcpClientAimAddr.toString());
@@ -133,7 +126,7 @@ void IOSettingsForm::loadSettings()
     ui->le_UdpLocalPort->setText(le_UdpLocalPort.toString());
     ui->le_UdpAimAddr->setText(le_UdpAimAddr.toString());
     ui->le_UdpAimPort->setText(le_UdpAimPort.toString());
-    ui->comboBox_Codec->setCurrentText(comboBox_Codec.toString());
+
 }
 
 void IOSettingsForm::saveSettings()
@@ -146,10 +139,6 @@ void IOSettingsForm::saveSettings()
     settings.setValue("DataBits", ui->comboBox_DataBits->currentText());
     settings.setValue("StopBits", ui->comboBox_StopBits->currentText());
     settings.setValue("Parity"  , ui->comboBox_Parity->currentText());
-    settings.setValue("SendNewLine", ui->checkBox_SendNewLine->isChecked());
-    settings.setValue("SendShow"   , ui->checkBox_SendShow->isChecked());
-    settings.setValue("HexShow"    , ui->checkBox_HexShow->isChecked());
-    settings.setValue("DateTime"    , ui->checkBox_DateTime->isChecked());
 
     settings.setValue("cmb_tcpClientLocalAddr",ui->cmb_tcpClientLocalAddr->currentText());
     settings.setValue("le_tcpClientAimAddr",ui->le_tcpClientAimAddr->text());
@@ -163,7 +152,6 @@ void IOSettingsForm::saveSettings()
     settings.setValue("le_UdpAimAddr",ui->le_UdpAimAddr->text());
     settings.setValue("le_UdpAimPort",ui->le_UdpAimPort->text());
 
-    settings.setValue("comboBox_Codec",ui->comboBox_Codec->currentText());
     settings.endGroup();
 }
 
@@ -174,12 +162,6 @@ void IOSettingsForm::setProgressBar(QProgressBar *_progressBar)
 
 void IOSettingsForm::stateInit()
 {
-    emit stateChange(RecvShowHex_State,ui->checkBox_HexShow->isChecked());
-    emit stateChange(RecvShowDate_State,ui->checkBox_DateTime->isChecked());
-    emit stateChange(IOSendNewLine_State,ui->checkBox_SendNewLine->isChecked());
-    emit stateChange(TextCodec,ui->comboBox_Codec->currentIndex());
-    //emit connectInfo(mSerialIOService.getSerialConnectInfo());
-
     if(connectMode == IOSettingsForm::TcpClient){
         emit connectInfo("TCP Client Mode");
     }else if(connectMode == IOSettingsForm::TcpServer){
@@ -195,7 +177,6 @@ void IOSettingsForm::onReadBytes(QByteArray bytes)
 {
     emit readBytes(bytes);
     if(receiveFile.isOpen()){
-        //receiveTextStream<<bytes;
         receiveFile.write(bytes);
     }
 }
@@ -211,7 +192,7 @@ void IOSettingsForm::onSendBytes(QByteArray bytes)
     }else if(connectMode == IOSettingsForm::Serial) {
         mSerialIOService.sendBytes(bytes);
     }
-    if(ui->checkBox_SendShow->isChecked()){
+    if(showSendStr){
         emit appendSendData(bytes);
     }
 }
@@ -299,6 +280,13 @@ void IOSettingsForm::onStateChange(STATE_CHANGE_TYPE_T type, int state)
             }
             emit stateChange(IOConnect_State, 0);
         }
+    }else if(type == RecvShowSend_State)
+    {
+        if(state == 0){
+            showSendStr = false;
+        }else{
+            showSendStr = true;
+        }
     }
 }
 
@@ -322,9 +310,7 @@ void IOSettingsForm::on_comboBox_PortName_currentTextChanged(const QString &arg1
         emit connectInfo(mSerialIOService.getSerialConnectInfo());
         connectMode = IOSettingsForm::Serial;
     }
-
 }
-
 
 void IOSettingsForm::on_comboBox_BaudRate_currentTextChanged(const QString &arg1)
 {
@@ -332,13 +318,11 @@ void IOSettingsForm::on_comboBox_BaudRate_currentTextChanged(const QString &arg1
     emit connectInfo(mSerialIOService.getSerialConnectInfo());
 }
 
-
 void IOSettingsForm::on_comboBox_StopBits_currentTextChanged(const QString &arg1)
 {
     mSerialIOService.setSerialStopBits(arg1);
     emit connectInfo(mSerialIOService.getSerialConnectInfo());
 }
-
 
 void IOSettingsForm::on_comboBox_DataBits_currentTextChanged(const QString &arg1)
 {
@@ -352,55 +336,14 @@ void IOSettingsForm::on_comboBox_Parity_currentTextChanged(const QString &arg1)
     emit connectInfo(mSerialIOService.getSerialConnectInfo());
 }
 
-void IOSettingsForm::on_checkBox_HexShow_stateChanged(int arg1)
-{
-    emit stateChange(RecvShowHex_State,arg1);
-}
-
-void IOSettingsForm::on_checkBox_DateTime_stateChanged(int arg1)
-{
-    emit stateChange(RecvShowDate_State,arg1);
-}
-
-void IOSettingsForm::on_checkBox_SendNewLine_stateChanged(int arg1)
-{
-    emit stateChange(IOSendNewLine_State,arg1);
-}
-
-void IOSettingsForm::on_pushButton_ClearRecv_clicked()
-{
-    emit stateChange(RecvClear_State,0);
-}
-
-void IOSettingsForm::onSendCountChanged(uint32_t count)
+void IOSettingsForm::onSendCountChanged(quint32 count)
 {
     emit stateChange(SendCount,count);
 }
 
-void IOSettingsForm::onRecvCountChanged(uint32_t count)
+void IOSettingsForm::onRecvCountChanged(quint32 count)
 {
     emit stateChange(RecvCount,count);
-}
-
-void IOSettingsForm::on_checkBox_RecvToFile_stateChanged(int arg1)
-{
-    if(arg1){
-        QString filePath = QDir::currentPath() + "/receiveData_" + QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss") + ".txt";
-
-        receiveFile.setFileName(filePath);
-        if(receiveFile.open(QIODevice::WriteOnly | QIODevice::Text)){
-            receiveTextStream.setDevice(&receiveFile);
-        }
-
-        QMessageBox msg;
-        msg.setText("文件将保存在"+filePath);
-        msg.show();
-        msg.exec();
-    }else{
-        if(receiveFile.isOpen()){
-            receiveFile.close();
-        }
-    }
 }
 
 // 热插拔检测端口的代码
@@ -413,22 +356,45 @@ bool IOSettingsForm::nativeEventFilter(const QByteArray & eventType, void * mess
         switch (msg->wParam) {
         case DBT_DEVICEARRIVAL:
             if (lpdb->dbch_devicetype == DBT_DEVTYP_PORT) {
-//                PDEV_BROADCAST_PORT lpdbv = (PDEV_BROADCAST_PORT)lpdb;
-//                QString port = QString::fromWCharArray(lpdbv->dbcp_name);//插入的串口名
+                PDEV_BROADCAST_PORT lpdbv = (PDEV_BROADCAST_PORT)lpdb;
+                QString port = QString::fromWCharArray(lpdbv->dbcp_name);//插入的串口名
+                QString com  = ui->comboBox_PortName->currentText();
+                bool serialConnect = false;
+                serialConnect = mSerialIOService.isSerialOpen();
+                if(serialConnect) mSerialIOService.closeSerial();
                 mSerialIOService.scanAvailableSerialPort(ui->comboBox_PortName);
+                if(serialConnect) mSerialIOService.openSerial();
                 ui->comboBox_PortName->addItem("TCPClient");
                 ui->comboBox_PortName->addItem("TCPServer");
                 ui->comboBox_PortName->addItem("UDP");
+                ui->comboBox_PortName->setCurrentText(com);
             }
             break;
         case DBT_DEVICEREMOVECOMPLETE:
             if (lpdb->dbch_devicetype == DBT_DEVTYP_PORT) {
-//                PDEV_BROADCAST_PORT lpdbv = (PDEV_BROADCAST_PORT)lpdb;
-//                QString port = QString::fromWCharArray(lpdbv->dbcp_name);//拔出的串口名
+                PDEV_BROADCAST_PORT lpdbv = (PDEV_BROADCAST_PORT)lpdb;
+                QString port = QString::fromWCharArray(lpdbv->dbcp_name);//拔出的串口名
+
+                QString com  = "";
+                if(connectMode == Serial){
+                    com  = ui->comboBox_PortName->currentText().split(" ").at(0);
+                    bool serialConnect = false;
+                    serialConnect = mSerialIOService.isSerialOpen();
+                    emit stateChange(IOConnect_State, 0);
+                    if(serialConnect) mSerialIOService.closeSerial();
+                    ui->comboBox_PortName->setEnabled(true);
+                    ui->comboBox_BaudRate->setEnabled(true);
+                    ui->comboBox_DataBits->setEnabled(true);
+                    ui->comboBox_StopBits->setEnabled(true);
+                    ui->comboBox_Parity->setEnabled(true);
+                }else{
+                    com  = ui->comboBox_PortName->currentText();
+                }
                 mSerialIOService.scanAvailableSerialPort(ui->comboBox_PortName);
                 ui->comboBox_PortName->addItem("TCPClient");
                 ui->comboBox_PortName->addItem("TCPServer");
                 ui->comboBox_PortName->addItem("UDP");
+                ui->comboBox_PortName->setCurrentText(com);
             }
             break;
         case DBT_DEVNODES_CHANGED:
@@ -438,13 +404,5 @@ bool IOSettingsForm::nativeEventFilter(const QByteArray & eventType, void * mess
         }
     }
     return QWidget::nativeEvent(eventType, message, result);
-}
-
-
-
-
-void IOSettingsForm::on_comboBox_Codec_currentIndexChanged(int index)
-{
-    emit stateChange(TextCodec,index);
 }
 

@@ -13,6 +13,12 @@
 #include <QTextCursor>
 #include <QTextDocument>
 #include <QTextBlock>
+#include <QTextCharFormat>
+#include <QColor>
+#include <QFont>
+#include <QTimer>
+#include "ringbuffer.h"
+#include <QThread>
 
 class Terminal : public QPlainTextEdit
 {
@@ -46,9 +52,11 @@ public:
     void mouseMoveEvent(QMouseEvent *event)override;
     void mouseReleaseEvent(QMouseEvent *event)override;
     void contextMenuEvent(QContextMenuEvent *e) override;  // 新增：右键菜单事件
+    bool event(QEvent *ev) override;
     void copy(void);
     void paste(void);
-
+    void applyAnsi(const QString &seq);
+    void delData(void);
 private:
     QTextCodec *m_codec = nullptr;                      // 当前使用的编码
     bool mShowHexState  = false;
@@ -80,6 +88,31 @@ private:
      QTextCursor m_fixedCursor;  // 固定的输入光标
      bool m_isSelecting    = false;
      int m_selectionAnchor = 0;
+
+     QTextCharFormat m_fmtDefault;   // 默认格式
+     QTextCharFormat m_fmtCurrent;   // 当前有效格式
+     QString         m_ansiBuf;      // 用来攒转义序列
+     bool            m_inEscape = false; // 是否正在收 ESC 序列
+
+     QHash<QString, QColor> ansiColor = {
+         {"30", QColor(0,0,0)},      // 黑
+         {"31", QColor(194,54,56)},  // 红
+         {"32", QColor(37,188,36)},  // 绿
+         {"33", QColor(193,156,0)},  // 黄
+         {"34", QColor(0,111,194)},  // 蓝
+         {"35", QColor(188,55,188)}, // 洋红
+         {"36", QColor(0,188,194)},  // 青
+         {"37", QColor(204,204,204)},// 白
+         // 高亮（90-97）同理，再写 8 行即可
+     };
+
+     bool           m_convert_start = false;
+     QTimer *flushTimer;
+     QByteArray textData;
+
+     RingBuffer<char> m_ringBuffer;
+     bool key_down = false;
+     bool isDeal = false;
 
 signals:
     void sendBytes(QByteArray bytes);

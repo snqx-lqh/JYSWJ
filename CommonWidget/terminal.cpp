@@ -7,11 +7,21 @@ Terminal::Terminal( QWidget *parent)
 {
     setFont(QFont("Consolas", 10));
     setStyleSheet("background:#222;color:#ddd;");
-    //setReadOnly(true);          // 允许光标到处跑，但所有输入走 io
     setContentsMargins(0,0,0,0);
 
     m_codec = QTextCodec::codecForName("UTF-8");
     m_fixedCursor = textCursor();
+
+    m_fmtDefault = QTextCharFormat();            // 黑底白字/系统默认
+    m_fmtCurrent = m_fmtDefault;
+
+    m_customSelection.start = 0;
+    m_customSelection.end   = 0;
+    m_customSelection.active = false;
+
+    QTextOption opt = document()->defaultTextOption();
+    opt.setWrapMode(QTextOption::WrapAnywhere);   // 纯字符截断
+    document()->setDefaultTextOption(opt);
 }
 
 
@@ -27,19 +37,15 @@ void Terminal::appendData(const QByteArray &ba)
 {
     if (ba.isEmpty()) return;
 
+    qDebug() << "Terminal::appendData current thread:" << QThread::currentThread();
+
     // 使用常量引用，避免不必要的复制
     const QByteArray &data = ba;
     QTextCursor cur = textCursor();
 
-//    if(m_expectUpEcho || m_expectDownEcho || m_expectRightEcho
-//            || m_expectLeftEcho || m_expectEnterEcho){
-//    }else{
-//        cur.movePosition(QTextCursor::End);
-//    }
-
     // ===== 时间戳显示 =====
     if (mShowDateState) {
-        QString dateTime = QString("[%1] 收<- ")
+        QString dateTime = QString("[%1]收<-")
                 .arg(QDateTime::currentDateTime().toString("yy-MM-dd hh:mm:ss.zzz"));
         cur.insertText("\n" + dateTime);
     }
@@ -57,73 +63,112 @@ void Terminal::appendData(const QByteArray &ba)
 
     for (int i = 0; i < text.size(); ++i) {
         QChar ch = text.at(i);
-        ushort code = ch.unicode();
+
+        /****************  ANSI 颜色解析  ****************/
+        if (m_inEscape) {
+            m_ansiBuf += ch;
+            // 序列以字母结尾
+            if (ch.isLetter()) {
+                m_inEscape = false;
+                applyAnsi(m_ansiBuf);     // 真正设置 m_fmtCurrent
+                m_ansiBuf.clear();
+            }
+            continue;                     // 颜色码本身不插入文本
+        }
+        if (ch == QChar(0x1B)) {          // ESC
+            cur.insertText(textData, m_fmtCurrent);
+            textData.clear();
+            m_inEscape = true;
+            m_ansiBuf = ch;
+            setTextCursor(cur);
+            continue;
+        }
 
         // --- 判断是否为控制字符 ---
-        bool isControlChar = (code < 0x20) || (code == 0x7F);
-
-        if (isControlChar) {
-            switch (code) {
-            case '\b': // Backspace
-                if (cur.positionInBlock() > 0)
-                    cur.movePosition(QTextCursor::Left);
-                if(m_expectUpEcho) {
-                    keyState = KEY_UP_STATE;
-                }else if(m_expectDownEcho){
-                    keyState = KEY_DOWN_STATE;
-                }else if(m_expectLeftEcho){
-                    keyState = KEY_LEFT_STATE;
-                }else if(m_expectRightEcho){
-                    keyState = KEY_RIGHT_STATE;
-                }else{
-                    keyState = KEY_BACK_STATE;
-                }
-                break;
-            case '\r': // 回车
-                // 移到行首
-                cur.movePosition(QTextCursor::StartOfBlock);
-                break;
-            case '\n': // 换行
-                cur.movePosition(QTextCursor::EndOfBlock);
-                cur.insertBlock();
-                break;
-            case 0x0C:
-                clear();
-                break;
-            default:
-                // 其他控制字符暂不处理
-                break;
+        if( ch == '\b' ){
+            cur.insertText(textData, m_fmtCurrent);
+            textData.clear();
+            if (cur.positionInBlock() > 0)
+                cur.movePosition(QTextCursor::Left);
+            if(m_expectUpEcho) {
+                keyState = KEY_UP_STATE;
+            }else if(m_expectDownEcho){
+                keyState = KEY_DOWN_STATE;
+            }else if(m_expectLeftEcho){
+                keyState = KEY_LEFT_STATE;
+            }else if(m_expectRightEcho){
+                keyState = KEY_RIGHT_STATE;
+            }else{
+                keyState = KEY_BACK_STATE;
             }
-        } else {
-            // --- 普通可打印字符 ---
-            if (keyState == KEY_BACK_STATE) {
-                // 如果上一个是退格+空格组合，擦除并重写
-                cur.deleteChar();
-                if(ch == 0x20){
-                    keyState = KEY_NORMAL_STATE;
-                }
-            }
-            if (keyState == KEY_UP_STATE || keyState == KEY_DOWN_STATE) {
-                if(ch == 0x20){
-                    cur.deleteChar();
-                }else{
-                    keyState = KEY_NORMAL_STATE;
-                }
-            }
-
-            if (keyState == KEY_LEFT_STATE) {
-                cur.deleteChar();
-            }
-
-            if(keyState == KEY_RIGHT_STATE){
-                cur.deleteChar();
-            }
-
-            cur.insertText(ch);
+            setTextCursor(cur);
+            continue;
         }
+
+        if( ch == '\r' ){
+            cur.insertText(textData, m_fmtCurrent);
+            textData.clear();
+            // 移到行首
+            cur.movePosition(QTextCursor::StartOfBlock);
+            setTextCursor(cur);
+            continue;
+        }
+
+        if( ch == '\n' ){
+            cur.insertText(textData, m_fmtCurrent);
+            textData.clear();
+            cur.movePosition(QTextCursor::EndOfBlock);
+            cur.insertBlock();
+            setTextCursor(cur);
+            continue;
+        }
+
+        textData.append(ch);
+
+        if (keyState == KEY_BACK_STATE) {
+            cur.insertText(textData, m_fmtCurrent);
+            textData.clear();
+            // 如果上一个是退格+空格组合，擦除并重写
+            cur.deleteChar();
+            if(ch == 0x20){
+                keyState = KEY_NORMAL_STATE;
+            }
+            setTextCursor(cur);
+            continue;
+        }
+        if (keyState == KEY_UP_STATE || keyState == KEY_DOWN_STATE) {
+            cur.insertText(textData, m_fmtCurrent);
+            textData.clear();
+            if(ch == 0x20){
+                cur.deleteChar();
+            }else{
+                keyState = KEY_NORMAL_STATE;
+            }
+            setTextCursor(cur);
+            continue;
+        }
+
+        if (keyState == KEY_LEFT_STATE) {
+            cur.insertText(textData, m_fmtCurrent);
+            textData.clear();
+            cur.deleteChar();
+            setTextCursor(cur);
+            continue;
+        }
+
+        if(keyState == KEY_RIGHT_STATE){
+            cur.insertText(textData, m_fmtCurrent);
+            textData.clear();
+            cur.deleteChar();
+            setTextCursor(cur);
+            continue;
+        }
+
     }
+
+    cur.insertText(textData, m_fmtCurrent);
+    textData.clear();
     setTextCursor(cur);
-    ensureCursorVisible();
 }
 
 
@@ -164,6 +209,51 @@ void Terminal::setShowDateState(bool state)
 void Terminal::onReadBytes(QByteArray bytes)
 {
     appendData(bytes);
+}
+
+void Terminal::delData()
+{
+    if(isDeal) return;
+    isDeal = true;
+    while(1)
+    {
+        char tempBuf[1024];
+        for(int i = 0;i<1024;i++){
+            tempBuf[i] = m_ringBuffer.getData(i);
+        }
+        QByteArray bytes;
+        //m_ringBuffer.read(bytes,m_ringBuffer.getLen());
+        m_ringBuffer.pushRd(1024);
+        appendData(tempBuf);  // 你的解析器
+        if(m_ringBuffer.getLen() == 0)
+        {
+            break;
+        }
+    }
+
+    isDeal = false;
+}
+
+bool Terminal::event(QEvent *ev)
+{
+    if (ev->type() == QEvent::InputMethod) {
+        QInputMethodEvent *ime = static_cast<QInputMethodEvent *>(ev);
+        if (!ime->commitString().isEmpty()) {
+            // 中文已上屏，直接发串口
+            QByteArray bytes;
+            if (m_codec->name() == "GBK") {
+                // GB18030 向下兼容 GBK， Qt5/6 都认
+                static QTextCodec *gbk = QTextCodec::codecForName("GB18030");
+                if (gbk) bytes = gbk->fromUnicode(ime->commitString());
+                else     bytes = ime->commitString().toLocal8Bit();   // 兜底
+            } else if (m_codec->name() == "UTF-8"){
+                bytes = ime->commitString().toUtf8();                 // UTF-8
+            }
+            emit sendBytes(bytes);
+        }
+        return true;   // 自己处理完
+    }
+    return QPlainTextEdit::event(ev);
 }
 
 void Terminal::keyPressEvent(QKeyEvent *ev)
@@ -220,8 +310,10 @@ void Terminal::keyPressEvent(QKeyEvent *ev)
         }
     }
 
-    if (!bytes.isEmpty())
+    if (!bytes.isEmpty()){
         emit sendBytes(bytes);
+        key_down = true;
+    }
 
 }
 
@@ -245,7 +337,19 @@ void Terminal::mousePressEvent(QMouseEvent *e)
 void Terminal::mouseMoveEvent(QMouseEvent *e)
 {
     if (!m_customSelection.active) return;
+
+    // 更新选中结束点
     m_customSelection.end = cursorForPosition(e->pos()).position();
+
+    // ===== 自动滚动逻辑 =====
+    const int margin = 10;  // 距离上下边界多少像素开始滚动
+    auto* vBar = verticalScrollBar();
+
+    if (e->pos().y() < margin)
+        vBar->setValue(vBar->value() - 1);
+    else if (e->pos().y() > viewport()->height() - margin)
+        vBar->setValue(vBar->value() + 1);
+
     viewport()->update();
 }
 
@@ -259,40 +363,48 @@ void Terminal::mouseReleaseEvent(QMouseEvent *e)
 
 void Terminal::paintEvent(QPaintEvent *e)
 {
-    // 先让 Qt 画完文本、光标、行号等
     QPlainTextEdit::paintEvent(e);
+    if (m_customSelection.start < 0 || m_customSelection.end < 0)
+        return;
 
-    if (m_customSelection.start < 0 || m_customSelection.end < 0) return;
-
-    // 保证 start <= end
     int start = qMin(m_customSelection.start, m_customSelection.end);
-    int end = qMax(m_customSelection.start, m_customSelection.end);
+    int end   = qMax(m_customSelection.start, m_customSelection.end);
+
+    if (start == end)
+        return;  // 无选区，不绘制
 
     QPainter p(viewport());
-    p.setBrush(QColor(0,120,215,80));   // 半透明蓝色
     p.setPen(Qt::NoPen);
+    p.setBrush(QColor(0,120,215,80));
 
-    // 把字符范围换算成矩形列表
     QTextCursor cur(document());
     cur.setPosition(start);
-    QTextCursor curE(document());
-    curE.setPosition(end);
 
-    QRect r1 = cursorRect(cur);
-    QRect r2 = cursorRect(curE);
+    int lastY = -1;
+    QRect lineRect;
 
-    if (r1.top() == r2.top()) {          // 同一行
-        p.drawRect(r1.left(), r1.top(), r2.right() - r1.left(), r1.height());
-    } else {                             // 多行
-        // 首行剩余部分
-        p.drawRect(r1.left(), r1.top(), viewport()->width() - r1.left(), r1.height());
-        // 中间完整行
-        for (int block = cur.blockNumber() + 1; block < curE.blockNumber(); ++block)
-            p.drawRect(0, cursorRect(QTextCursor(document()->findBlockByNumber(block))).top(),
-                       viewport()->width(), fontMetrics().height());
-        // 末行开头部分
-        p.drawRect(0, r2.top(), r2.right(), r2.height());
+    for (int pos = start; pos <= end; ++pos) {
+        cur.setPosition(pos);
+        QRect r = cursorRect(cur);
+
+        int charWidth = fontMetrics().horizontalAdvance(cur.document()->characterAt(pos));
+
+        if (lastY == -1) {
+            lastY = r.y();
+            lineRect = r;
+            lineRect.setRight(r.right() + charWidth);
+        }
+        else if (r.y() == lastY) {
+            lineRect.setRight(r.right() + charWidth);
+        }
+        else {
+            p.drawRect(lineRect);
+            lastY = r.y();
+            lineRect = r;
+            lineRect.setRight(r.right() + charWidth);
+        }
     }
+    p.drawRect(lineRect);
 }
 
 void Terminal::copy()
@@ -304,19 +416,23 @@ void Terminal::copy()
     QTextCursor cur(document());
     cur.setPosition(s);
     cur.setPosition(e, QTextCursor::KeepAnchor);
-    QApplication::clipboard()->setText(cur.selectedText());
+
+    // 获取选中文本
+    QString sel = cur.selectedText();
+
+    // ⭕️关键：把段落分隔符替换成标准换行
+    sel.replace(QChar::ParagraphSeparator, "\r\n"); // Windows 风格
+
+    // 或者 Linux 风格
+    // sel.replace(QChar::ParagraphSeparator, "\n");
+
+    QApplication::clipboard()->setText(sel);
 }
 
 void Terminal::paste()
 {
     QString text = QApplication::clipboard()->text();
     if (text.isEmpty()) return;
-
-    // 在“真实光标”处插入
-//    QTextCursor cur = m_fixedCursor;   // 你之前保存的“禁止移动”光标
-//    cur.insertText(text);
-//    setTextCursor(cur);                // 更新光标位置到插入之后
-//    m_fixedCursor = cur;               // 记录新位置
 
     const QMimeData *md = QApplication::clipboard()->mimeData();
     insertFromMimeData(md);           // ← 最终只会调这里
@@ -329,6 +445,46 @@ void Terminal::contextMenuEvent(QContextMenuEvent *e)
     menu.addAction("复制", this, &Terminal::copy);
     menu.addAction("粘贴", this, &Terminal::paste);
     menu.exec(QCursor::pos());
+}
+
+void Terminal::applyAnsi(const QString &seq)
+{
+    if (!seq.startsWith("\x1B[")) return;
+    QString body = seq.mid(2, seq.length() - 3);   // 去掉 ESC[ 和末尾字母
+
+    if(m_convert_start){
+        m_fmtCurrent = QTextCharFormat();   // 先全部清空
+        m_fmtCurrent.setForeground(m_fmtDefault.foreground());
+        m_fmtCurrent.setBackground(m_fmtDefault.background());
+        // 如果有默认字体也拷回来
+        m_fmtCurrent.setFont(m_fmtDefault.font());
+        m_convert_start = false;
+        return;
+    }
+
+    QStringList codes = body.split(';', QString::SkipEmptyParts);
+
+    for (const QString &c : codes) {
+        if (c == "0" || c.isEmpty()) {          // 真正 reset
+            m_fmtCurrent = QTextCharFormat();   // 先全部清空
+            m_fmtCurrent.setForeground(m_fmtDefault.foreground());
+            m_fmtCurrent.setBackground(m_fmtDefault.background());
+            // 如果有默认字体也拷回来
+            m_fmtCurrent.setFont(m_fmtDefault.font());
+            continue;
+        }
+        if (c == "1") {                         // 高亮/加粗
+            m_fmtCurrent.setFontWeight(QFont::Bold);
+            continue;
+        }
+        if (ansiColor.contains(c)) {            // 前景色 30-37
+            m_fmtCurrent.setForeground(ansiColor[c]);
+            continue;
+        }
+        // 还可以扩展 40-47 背景色、90-97 高亮前景色
+    }
+
+    m_convert_start = true;
 }
 
 

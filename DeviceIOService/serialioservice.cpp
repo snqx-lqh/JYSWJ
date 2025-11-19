@@ -122,7 +122,10 @@ QByteArray SerialIOService::safeRead(QSerialPort *dev, qint64 maxSize)
 
 void SerialIOService::onReadReady()
 {
-    QByteArray bytes = safeRead(serialPort, 16 * 1024);
+    // bytes = safeRead(serialPort, 16 * 1024);
+    QByteArray bytes = serialPort->readAll();
+    qDebug() << "SerialIOService::onReadReady() current thread:" << QThread::currentThread();
+    qDebug() << "SerialIOService::bytes: " << bytes.size();
     emit readBytes(bytes);
     emit recvBytesCount(bytes.length());
 }

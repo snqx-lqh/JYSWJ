@@ -21,8 +21,8 @@ public slots:
     void onConnectInfo(QString Info);
 private:
     Ui::StateForm *ui;
-    uint32_t sendCount = 0;
-    uint32_t recvCount = 0;
+    quint64 sendCount = 0;
+    quint64 recvCount = 0;
 
 };
 

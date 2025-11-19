@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle("简易上位机 V2.0.2");
+    setWindowTitle("简易上位机 V2.0.3");
 
     QDir dir(QCoreApplication::applicationDirPath());
     mIniFile = dir.filePath("Config/settings.ini");
@@ -37,14 +37,20 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->widget_MultiSend,&MultiSendForm::sendBytes,ui->widget_IOSetting,&IOSettingsForm::onSendBytes);
 
+    connect(ui->widget_Recv,&RecvAreaForm::stateChange,ui->widget_IOSetting,&IOSettingsForm::onStateChange);
+    connect(ui->widget_Recv,&RecvAreaForm::stateChange,ui->widget_Send,&SendAreaForm::onStateChange);
+    connect(ui->widget_Recv,&RecvAreaForm::stateChange,ui->widget_MultiSend,&MultiSendForm::onStateChange);
+
+
     ui->widget_IOSetting->stateInit();
     ui->widget_ToolBar->stateInit();
+    ui->widget_Recv->stateInit();
 
     ui->widget_ToolBar->setMinimumWidth(38);
     ui->widget_ToolBar->setMaximumWidth(38);
-    ui->widget_IOSetting->setMinimumWidth(210);
-    ui->widget_IOSetting->setMaximumWidth(210);
-
+//    ui->widget_IOSetting->setMinimumWidth(210);
+//    ui->widget_IOSetting->setMaximumWidth(210);
+    ui->widget_IOSetting3->setVisible(false);
     loadSettings();
 }
 
@@ -80,6 +86,7 @@ void MainWindow::saveSettings()
 
 void MainWindow::onStateChange(STATE_CHANGE_TYPE_T type, int state)
 {
+    qDebug() << "MainWindow::onStateChange current thread:" << QThread::currentThread();
     if(type == IOSETTING_VISIBLE){
         bool stateTemp = (state==0?false:true);
         ui->widget_IOSetting->setVisible(stateTemp);

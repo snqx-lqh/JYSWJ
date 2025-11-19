@@ -61,6 +61,9 @@ include($$PWD/CommonWidget/CommonWidget.pri)
 INCLUDEPATH += $$PWD/CommonTools
 include($$PWD/CommonTools/CommonTools.pri)
 
+INCLUDEPATH += $$PWD/RingBuffer
+include($$PWD/RingBuffer/RingBuffer.pri)
+
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin

@@ -14,6 +14,7 @@
 #include <QProgressBar>
 
 #include <QTimer>
+#include <QThread>
 
 class SerialIOService : public QObject
 {
@@ -65,8 +66,8 @@ public slots:
 
 signals:
     void readBytes              (QByteArray bytes);
-    void sendBytesCount         (uint32_t   count);
-    void recvBytesCount         (uint32_t   count);
+    void sendBytesCount         (quint32   count);
+    void recvBytesCount         (quint32   count);
 
 private:
     QSerialPort  *serialPort=nullptr;
