@@ -11,7 +11,7 @@ FileConvertForm::FileConvertForm(QWidget *parent) :
 
     ui->comboBox_ProtocolSelect->addItem("IMX6ULL_256_IMX");
     ui->comboBox_ProtocolSelect->addItem("IMX6ULL_512_IMX");
-
+    ui->plainTextEdit->setFont(QFont("Consolas", 10));
     loadSettings();
 }
 

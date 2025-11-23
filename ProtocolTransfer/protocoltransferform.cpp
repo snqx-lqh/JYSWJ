@@ -14,7 +14,7 @@ ProtocolTransferForm::ProtocolTransferForm(QWidget *parent) :
     connect(&mXmodem,&Xmodem::sendBytes,this,&ProtocolTransferForm::sendBytes);
     connect(&mXmodem,&Xmodem::xmodemStateChange,this,&ProtocolTransferForm::onXmodemStateChange);
     connect(this,&ProtocolTransferForm::xmodemStateChange,&mXmodem,&Xmodem::onXmodemStateChange);
-
+    ui->plainTextEdit->setFont(QFont("Consolas", 10));
     loadSettings();
 }
 

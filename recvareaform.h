@@ -56,6 +56,7 @@ private:
     QString         mIniFile;
     QFile         receiveFile;
     QTextStream   receiveTextStream;
+    QString TextCodeC;
 };
 
 #endif // RECVAREAFORM_H

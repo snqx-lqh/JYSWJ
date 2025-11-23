@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle("简易上位机 V2.0.3");
+    setWindowTitle("简易上位机 V2.0.4");
 
     QDir dir(QCoreApplication::applicationDirPath());
     mIniFile = dir.filePath("Config/settings.ini");
@@ -50,7 +50,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->widget_ToolBar->setMaximumWidth(38);
 //    ui->widget_IOSetting->setMinimumWidth(210);
 //    ui->widget_IOSetting->setMaximumWidth(210);
-    ui->widget_IOSetting3->setVisible(false);
     loadSettings();
 }
 

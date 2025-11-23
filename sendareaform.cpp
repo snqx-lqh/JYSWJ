@@ -21,6 +21,10 @@ SendAreaForm::SendAreaForm(QWidget *parent) :
         on_pushButton_Send_clicked();
     });
     ui->comboBox_HistoryFile->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLength);
+
+    ui->plainTextEdit->setFont(QFont("Consolas", 10));
+    //ui->plainTextEdit->setStyleSheet("background:#222;color:#ddd;");
+
     loadSettings();
 }
 

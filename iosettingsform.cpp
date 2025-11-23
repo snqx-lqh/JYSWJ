@@ -92,10 +92,6 @@ void IOSettingsForm::loadSettings()
     auto DataBits        = settings.value("DataBits","8");
     auto StopBits        = settings.value("StopBits","1");
     auto Parity          = settings.value("Parity","None");
-    auto SendNewLine     = settings.value("SendNewLine","false");
-    auto SendShow        = settings.value("SendShow","false");
-    auto HexShow         = settings.value("HexShow","false");
-    auto DateTime        = settings.value("DateTime","false");
 
     auto cmb_tcpClientLocalAddr        = settings.value("cmb_tcpClientLocalAddr",ui->cmb_tcpClientLocalAddr->currentText());
     auto le_tcpClientAimAddr          = settings.value("le_tcpClientAimAddr",ui->le_tcpClientAimAddr->text());
@@ -358,43 +354,37 @@ bool IOSettingsForm::nativeEventFilter(const QByteArray & eventType, void * mess
             if (lpdb->dbch_devicetype == DBT_DEVTYP_PORT) {
                 PDEV_BROADCAST_PORT lpdbv = (PDEV_BROADCAST_PORT)lpdb;
                 QString port = QString::fromWCharArray(lpdbv->dbcp_name);//插入的串口名
-                QString com  = ui->comboBox_PortName->currentText();
-                bool serialConnect = false;
-                serialConnect = mSerialIOService.isSerialOpen();
-                if(serialConnect) mSerialIOService.closeSerial();
+                QString currentCom  = ui->comboBox_PortName->currentText();
                 mSerialIOService.scanAvailableSerialPort(ui->comboBox_PortName);
-                if(serialConnect) mSerialIOService.openSerial();
                 ui->comboBox_PortName->addItem("TCPClient");
                 ui->comboBox_PortName->addItem("TCPServer");
                 ui->comboBox_PortName->addItem("UDP");
-                ui->comboBox_PortName->setCurrentText(com);
+                ui->comboBox_PortName->setCurrentText(currentCom);
             }
             break;
         case DBT_DEVICEREMOVECOMPLETE:
             if (lpdb->dbch_devicetype == DBT_DEVTYP_PORT) {
                 PDEV_BROADCAST_PORT lpdbv = (PDEV_BROADCAST_PORT)lpdb;
                 QString port = QString::fromWCharArray(lpdbv->dbcp_name);//拔出的串口名
-
-                QString com  = "";
+                QString currentCom  = ui->comboBox_PortName->currentText();
                 if(connectMode == Serial){
-                    com  = ui->comboBox_PortName->currentText().split(" ").at(0);
-                    bool serialConnect = false;
-                    serialConnect = mSerialIOService.isSerialOpen();
-                    emit stateChange(IOConnect_State, 0);
-                    if(serialConnect) mSerialIOService.closeSerial();
-                    ui->comboBox_PortName->setEnabled(true);
-                    ui->comboBox_BaudRate->setEnabled(true);
-                    ui->comboBox_DataBits->setEnabled(true);
-                    ui->comboBox_StopBits->setEnabled(true);
-                    ui->comboBox_Parity->setEnabled(true);
+                    if(port == currentCom.split(" ").at(0)){
+                        emit stateChange(IOConnect_State, 0);
+                        mSerialIOService.closeSerial();
+                        ui->comboBox_PortName->setEnabled(true);
+                        ui->comboBox_BaudRate->setEnabled(true);
+                        ui->comboBox_DataBits->setEnabled(true);
+                        ui->comboBox_StopBits->setEnabled(true);
+                        ui->comboBox_Parity->setEnabled(true);
+                    }else{
+                    }
                 }else{
-                    com  = ui->comboBox_PortName->currentText();
                 }
                 mSerialIOService.scanAvailableSerialPort(ui->comboBox_PortName);
                 ui->comboBox_PortName->addItem("TCPClient");
                 ui->comboBox_PortName->addItem("TCPServer");
                 ui->comboBox_PortName->addItem("UDP");
-                ui->comboBox_PortName->setCurrentText(com);
+                ui->comboBox_PortName->setCurrentText(currentCom);
             }
             break;
         case DBT_DEVNODES_CHANGED:

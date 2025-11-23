@@ -9,13 +9,15 @@ MultiSendForm::MultiSendForm(QWidget *parent) :
 
     QDir dir(QCoreApplication::applicationDirPath());
     mIniFile = dir.filePath("Config/多字符配置文件/default.ini");
-
+    mIniFileSettings = dir.filePath("Config/settings.ini");
     UiInit();
     loadSettings();
 
-    QSettings settings(mIniFile,QSettings::IniFormat);
+    QString CurrentIni;
+    QSettings settings(mIniFileSettings,QSettings::IniFormat);
     settings.beginGroup("MultiSendFormSettings");
     ui->checkBox_SendNewLine->setChecked(settings.value("checkBox_SendNewLine","false").toBool());
+    CurrentIni = settings.value("comboBox_IniFile").toString();
     settings.endGroup();
 
     ui->comboBox_IniFile->addItem("default.ini");
@@ -30,6 +32,15 @@ MultiSendForm::MultiSendForm(QWidget *parent) :
     }
     ui->comboBox_IniFile->setCurrentText("default.ini");
 
+    bool exists = QFileInfo::exists(mIniFileSettings);
+    if(!CurrentIni.isEmpty() && exists){
+        ui->comboBox_IniFile->setCurrentText(CurrentIni);
+        QString temp = CurrentIni;
+        QDir dir(QCoreApplication::applicationDirPath());
+        mIniFile = dir.filePath("Config/多字符配置文件/")+temp;
+        loadSettings();
+    }
+
     MultiSendCycleTimer = new QTimer;
     connect(MultiSendCycleTimer,SIGNAL(timeout()),this,SLOT(onMultiSendCycleTimerOut()));
 
@@ -40,9 +51,10 @@ MultiSendForm::~MultiSendForm()
 {
     saveSettings();
 
-    QSettings settings(mIniFile,QSettings::IniFormat);
+    QSettings settings(mIniFileSettings,QSettings::IniFormat);
     settings.beginGroup("MultiSendFormSettings");
     settings.setValue(QString("checkBox_SendNewLine"),ui->checkBox_SendNewLine->isChecked());
+    settings.setValue(QString("comboBox_IniFile"),ui->comboBox_IniFile->currentText());
     settings.endGroup();
 
     delete ui;

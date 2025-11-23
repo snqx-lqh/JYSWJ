@@ -17,6 +17,8 @@ RecvAreaForm::RecvAreaForm(QWidget *parent) :
     ui->comboBox_codec->addItem("UTF-8");
 
     loadSettings();
+
+    ui->comboBox_codec->setCurrentText(TextCodeC);
 }
 
 RecvAreaForm::~RecvAreaForm()
@@ -48,6 +50,7 @@ void RecvAreaForm::loadSettings()
     ui->checkBox_ShowHex->setChecked(settings.value("HexShow","false").toBool());
     ui->checkBox_ShowDate->setChecked(settings.value("DateShow","false").toBool());
     ui->checkBox_SendShow->setChecked(settings.value("SendShow","false").toBool());
+    TextCodeC = settings.value("comboBox_codec","GBK").toString();
 
     settings.endGroup();
 }
@@ -60,6 +63,7 @@ void RecvAreaForm::saveSettings()
     settings.setValue("HexShow",ui->checkBox_ShowHex->isChecked());
     settings.setValue("DateShow",ui->checkBox_ShowDate->isChecked());
     settings.setValue("SendShow",ui->checkBox_SendShow->isChecked());
+    settings.setValue("comboBox_codec",ui->comboBox_codec->currentText());
 
     settings.endGroup();
 }

@@ -66,6 +66,7 @@ private:
     QStringList MultiSendInfo;
     int    mulSendItemMaxNum = 50;
     QString         mIniFile;
+    QString         mIniFileSettings;
     bool   initFinished = false;
     bool   connectState = false;
     QTimer *MultiSendCycleTimer;
