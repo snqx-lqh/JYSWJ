@@ -128,6 +128,7 @@ void RecvAreaForm::on_pushButton_ClearRecv_clicked()
 {
     ui->plainTextEdit->clear();
     mWaveShowForm.clearRecv();
+    emit stateChange(RecvClear_State,0);
 }
 
 

@@ -50,6 +50,7 @@ void SendAreaForm::loadSettings()
     ui->lineEdit_SendCycle->setText(settings.value(QString("lineEdit_SendCycle"),"1000").toString());
     ui->checkBox_HexSend->setChecked(settings.value(QString("checkBox_HexSend"),ui->checkBox_HexSend->isChecked()).toBool());
     ui->plainTextEdit->appendPlainText(settings.value(QString("plainTextEdit"),"").toString());
+    ui->comboBox_HistoryFile->setCurrentText(comboBox_HistoryFile_currentText.toString());
     settings.endGroup();
 
 }
@@ -104,6 +105,7 @@ void SendAreaForm::onReadBytes(QByteArray bytes)
 void SendAreaForm::on_pushButton_Clear_clicked()
 {
     ui->plainTextEdit->clear();
+
 }
 
 

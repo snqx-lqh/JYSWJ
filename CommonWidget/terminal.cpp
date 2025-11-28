@@ -37,7 +37,7 @@ void Terminal::appendData(const QByteArray &ba)
 {
     if (ba.isEmpty()) return;
 
-    qDebug() << "Terminal::appendData current thread:" << QThread::currentThread();
+    //qDebug() << "Terminal::appendData current thread:" << QThread::currentThread();
 
     // 使用常量引用，避免不必要的复制
     const QByteArray &data = ba;
@@ -211,28 +211,7 @@ void Terminal::onReadBytes(QByteArray bytes)
     appendData(bytes);
 }
 
-void Terminal::delData()
-{
-    if(isDeal) return;
-    isDeal = true;
-    while(1)
-    {
-        char tempBuf[1024];
-        for(int i = 0;i<1024;i++){
-            tempBuf[i] = m_ringBuffer.getData(i);
-        }
-        QByteArray bytes;
-        //m_ringBuffer.read(bytes,m_ringBuffer.getLen());
-        m_ringBuffer.pushRd(1024);
-        appendData(tempBuf);  // 你的解析器
-        if(m_ringBuffer.getLen() == 0)
-        {
-            break;
-        }
-    }
 
-    isDeal = false;
-}
 
 bool Terminal::event(QEvent *ev)
 {
@@ -359,6 +338,11 @@ void Terminal::mouseReleaseEvent(QMouseEvent *e)
         m_customSelection.active = false;
         viewport()->update();
     }
+}
+
+void Terminal::mouseDoubleClickEvent(QMouseEvent *event)
+{
+
 }
 
 void Terminal::paintEvent(QPaintEvent *e)

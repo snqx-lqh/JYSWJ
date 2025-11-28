@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle("简易上位机 V2.0.4");
+    setWindowTitle("简易上位机 V2.0.5");
 
     QDir dir(QCoreApplication::applicationDirPath());
     mIniFile = dir.filePath("Config/settings.ini");
@@ -40,6 +40,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->widget_Recv,&RecvAreaForm::stateChange,ui->widget_IOSetting,&IOSettingsForm::onStateChange);
     connect(ui->widget_Recv,&RecvAreaForm::stateChange,ui->widget_Send,&SendAreaForm::onStateChange);
     connect(ui->widget_Recv,&RecvAreaForm::stateChange,ui->widget_MultiSend,&MultiSendForm::onStateChange);
+    connect(ui->widget_Recv,&RecvAreaForm::stateChange,ui->widget_state,&StateForm::onStateChange);
 
 
     ui->widget_IOSetting->stateInit();

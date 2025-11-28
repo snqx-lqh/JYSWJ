@@ -14,6 +14,11 @@ ProtocolTransferForm::ProtocolTransferForm(QWidget *parent) :
     connect(&mXmodem,&Xmodem::sendBytes,this,&ProtocolTransferForm::sendBytes);
     connect(&mXmodem,&Xmodem::xmodemStateChange,this,&ProtocolTransferForm::onXmodemStateChange);
     connect(this,&ProtocolTransferForm::xmodemStateChange,&mXmodem,&Xmodem::onXmodemStateChange);
+
+    connect(&mYmodem,&Ymodem::sendBytes,this,&ProtocolTransferForm::sendBytes);
+    connect(&mYmodem,&Ymodem::ymodemStateChange,this,&ProtocolTransferForm::onYmodemStateChange);
+    connect(this,&ProtocolTransferForm::ymodemStateChange,&mYmodem,&Ymodem::onYmodemStateChange);
+
     ui->plainTextEdit->setFont(QFont("Consolas", 10));
     loadSettings();
 }
@@ -69,13 +74,22 @@ void ProtocolTransferForm::saveSettings()
 
 void ProtocolTransferForm::onReadBytes(QByteArray bytes)
 {
-    mXmodem.onReadBytes(bytes);
+    ProtocolMethod = ui->cmb_SendMode->currentText();
+    if(ProtocolMethod == "Xmodem 128" || ProtocolMethod == "Xmodem 1024")
+    {
+        mXmodem.onReadBytes(bytes);
+    }
+    if(ProtocolMethod == "Ymodem 128" || ProtocolMethod == "Ymodem 1024")
+    {
+        mYmodem.onReadBytes(bytes);
+    }
 }
 
 void ProtocolTransferForm::onProtocolStateChange(STATE_CHANGE_TYPE_T type, int state)
 {
     if(type == IOConnect_State){
         emit xmodemStateChange(Xmodem::IOConnectState,QString::number(state));
+        emit ymodemStateChange(Ymodem::IOConnectState,QString::number(state));
     }
 }
 
@@ -88,6 +102,27 @@ void ProtocolTransferForm::onXmodemStateChange(Xmodem::XmodemState type, QString
     }else if(type == Xmodem::SendTransferState){
         if(state == "1"){
             showMsg("green","传输完成");
+        }else if(state == QString("DisConnected")){
+            showMsg("red","退出传输，通信IO连接失败！");
+        }
+        ui->comboBox_HistoryFile->setEnabled(true);
+        ui->cmb_SendMode->setEnabled(true);
+        ui->btn_selectFile->setEnabled(true);
+        ui->btn_StartSend->setEnabled(true);
+    }
+}
+
+void ProtocolTransferForm::onYmodemStateChange(Ymodem::YmodemState type, QString state)
+{
+    if(type == Ymodem::SendPercent){
+        ui->progressBar->setValue(state.toFloat());
+    }else if(type == Ymodem::SendInfo){
+        showMsg("green",state);
+    }else if(type == Ymodem::SendTransferState){
+        if(state == "1"){
+            showMsg("green","传输完成");
+        }if(state == "2"){
+            showMsg("red","取消传输");
         }else if(state == QString("DisConnected")){
             showMsg("red","退出传输，通信IO连接失败！");
         }
@@ -130,6 +165,10 @@ void ProtocolTransferForm::on_btn_StartSend_clicked()
     {
         mXmodem.StartSendXmodem(ProtocolMethod,SendFilePath);
     }
+    if(ProtocolMethod == "Ymodem 128" || ProtocolMethod == "Ymodem 1024")
+    {
+        mYmodem.StartSendYmodem(ProtocolMethod,SendFilePath);
+    }
 
     ui->comboBox_HistoryFile->setEnabled(false);
     ui->cmb_SendMode->setEnabled(false);
@@ -143,6 +182,10 @@ void ProtocolTransferForm::on_btn_CancelSend_clicked()
     if(ProtocolMethod == "Xmodem 128" || ProtocolMethod == "Xmodem 1024")
     {
         mXmodem.CancelSendXmodem();
+    }
+    if(ProtocolMethod == "Ymodem 128" || ProtocolMethod == "Ymodem 1024")
+    {
+        mYmodem.CancelSendYmodem();
     }
     ui->comboBox_HistoryFile->setEnabled(true);
     ui->cmb_SendMode->setEnabled(true);

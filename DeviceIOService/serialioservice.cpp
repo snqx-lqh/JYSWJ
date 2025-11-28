@@ -20,7 +20,7 @@ bool SerialIOService::openSerial()
         qDebug() << "串口打开成功";
     }else{
         qDebug() << "串口打开失败";
-        QMessageBox::warning(nullptr,"串口打开提示","串口打开失败！！！");
+        //QMessageBox::warning(nullptr,"串口打开提示","串口打开失败！！！");
     }
     return connect;
 }
@@ -124,8 +124,8 @@ void SerialIOService::onReadReady()
 {
     // bytes = safeRead(serialPort, 16 * 1024);
     QByteArray bytes = serialPort->readAll();
-    qDebug() << "SerialIOService::onReadReady() current thread:" << QThread::currentThread();
-    qDebug() << "SerialIOService::bytes: " << bytes.size();
+//    qDebug() << "SerialIOService::onReadReady() current thread:" << QThread::currentThread();
+//    qDebug() << "SerialIOService::bytes: " << bytes.size();
     emit readBytes(bytes);
     emit recvBytesCount(bytes.length());
 }

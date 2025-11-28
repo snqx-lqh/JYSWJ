@@ -17,7 +17,6 @@
 #include <QColor>
 #include <QFont>
 #include <QTimer>
-#include "ringbuffer.h"
 #include <QThread>
 
 class Terminal : public QPlainTextEdit
@@ -51,6 +50,7 @@ public:
     void mousePressEvent(QMouseEvent *event)override;
     void mouseMoveEvent(QMouseEvent *event)override;
     void mouseReleaseEvent(QMouseEvent *event)override;
+    void mouseDoubleClickEvent(QMouseEvent *event)override;
     void contextMenuEvent(QContextMenuEvent *e) override;  // 新增：右键菜单事件
     bool event(QEvent *ev) override;
     void copy(void);
@@ -110,7 +110,6 @@ private:
      QTimer *flushTimer;
      QByteArray textData;
 
-     RingBuffer<char> m_ringBuffer;
      bool key_down = false;
      bool isDeal = false;
 

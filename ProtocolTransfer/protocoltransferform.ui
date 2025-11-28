@@ -94,6 +94,16 @@
             <string>Xmodem 1024</string>
            </property>
           </item>
+          <item>
+           <property name="text">
+            <string>Ymodem 128</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Ymodem 1024</string>
+           </property>
+          </item>
          </widget>
         </item>
         <item>

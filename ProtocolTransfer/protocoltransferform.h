@@ -14,6 +14,7 @@
 #include <QDebug>
 #include "common.h"
 #include "xmodem.h"
+#include "ymodem.h"
 
 namespace Ui {
 class ProtocolTransferForm;
@@ -27,16 +28,6 @@ public:
     explicit ProtocolTransferForm(QWidget *parent = nullptr);
     ~ProtocolTransferForm();
 
-    enum SEND_STATE{
-        IDLE = 0,
-        XMODEM_SEND,
-        XMODEM_SEND_DOWN,
-        XMODEM_SEND_ALL_FINISH,
-        XMODEM_SEND_SEND_EOT,
-        XMODEM_SEND_WAIT_EOT_ACK
-    };
-    Q_ENUM(SEND_STATE)
-
     void showMsg(QString color,QString msg);
 
     void loadSettings();
@@ -46,7 +37,7 @@ public slots:
     void onReadBytes(QByteArray bytes);
     void onProtocolStateChange(STATE_CHANGE_TYPE_T type,int state);
     void onXmodemStateChange(Xmodem::XmodemState type,QString state);
-
+    void onYmodemStateChange(Ymodem::YmodemState type,QString state);
 
 private slots:
     void on_btn_CleanWindow_clicked();
@@ -60,6 +51,7 @@ private slots:
 signals:
     void sendBytes(QByteArray bytes);
     void xmodemStateChange(Xmodem::XmodemState type,QString state);
+    void ymodemStateChange(Ymodem::YmodemState type,QString state);
 
 private:
     Ui::ProtocolTransferForm *ui;
@@ -67,6 +59,7 @@ private:
     QString lastDir = ".";
     QString    m_iniFile;
     Xmodem     mXmodem;
+    Ymodem     mYmodem;
 
     QString ProtocolMethod = ""; ///< 协议名
     QString SendFilePath   = ""; ///< 发送文件路径

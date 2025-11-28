@@ -11,92 +11,91 @@ public:
     RingBuffer(unsigned n=4096);
     ~RingBuffer();
 
-    void addData(T* samples,unsigned num);
-    T getData(unsigned n);
-    void pushRd(unsigned n);
-    int read(T* out, int maxLen);
+    void write(T* data,unsigned count); ///< 写入指定长的数据
+    T at(unsigned index);               ///< 查看指定位置的数据，从当前读指针开始
+    void advanceReadPos(unsigned n);    ///< 推进读指针
+    void clear();
 
-    unsigned getLen() const;
+    unsigned dataSize() const;
 private:
-    T* bufferData;
-    unsigned rd;
-    unsigned len;
-    unsigned size;
+    T*  m_buffer = nullptr;
+    unsigned m_readPos;
+    unsigned m_dataSize;  ///< 现存的数据量
+    unsigned m_capacity;  ///< 最大能存放的数量
 };
 
 template <typename T>
 RingBuffer<T>::RingBuffer(unsigned n)
 {
-    bufferData = new T[n];
-    rd = 0;
-    len = 0;
-    size = n;
+    m_buffer = new T[n];
+    m_readPos = 0;
+    m_dataSize = 0;
+    m_capacity = n;
 }
 
 template <typename T>
 RingBuffer<T>::~RingBuffer()
 {
-    delete[] bufferData;
+    delete[] m_buffer;
 }
 
 template <typename T>
-void RingBuffer<T>::addData(T* samples,unsigned num)
+void RingBuffer<T>::write(T* data,unsigned count)
 {
-    if(num <= 0) return;
+    if(count <= 0) return;
 
     //计算剩余空间
-    unsigned space = size - len;
+    unsigned space = m_capacity - m_dataSize;
     //依序赋值
-    for(int i = 0; i < num ; i++)
+    for(unsigned i = 0; i < count ; i++)
     {
-        bufferData[(i + rd + len) % size] = samples[i];
+        m_buffer[(i + m_readPos + m_dataSize) % m_capacity] = data[i];
     }
     //添加数小于剩余空间，len直接加
-    if(num < space)
+    if(count < space)
     {
-        len += num;
+        m_dataSize += count;
     }
     //添加数大于剩余空间，len=size
     else{
-        rd = (rd + len + num) % size;
-        len = size;
+        m_readPos  = (m_readPos + m_dataSize + count) % m_capacity;
+        m_dataSize = m_capacity;
     }
 }
 
 template <typename T>
-T RingBuffer<T>::getData(unsigned n)
+T RingBuffer<T>::at(unsigned index)
 {
-    return bufferData[(rd + n) % size];
+    T retData;
+    retData = m_buffer[(m_readPos + index) % m_capacity];
+    return retData;
 }
 
-template <typename T>
-int RingBuffer<T>::read(T* out, int maxLen)
-{
-    int count = MIN(maxLen, getLen());
 
-    for (int i = 0; i < count; ++i) {
-        out[i] = bufferData[rd];
-        rd = (rd + 1) % size;
-    }
-    return count;
-}
 
 template <typename T>
-void RingBuffer<T>::pushRd(unsigned n)
+void RingBuffer<T>::advanceReadPos(unsigned n)
 {
-    if(n <= len){
-        rd = (rd + n) % size;
-        len -= n;
+    if(n <= m_dataSize){
+        m_readPos = (m_readPos + n) % m_capacity;
+        m_dataSize -= n;
     }else {
-        rd = (rd + len) % size;
-        len = 0;
+        m_readPos = (m_readPos + m_dataSize) % m_capacity;
+        m_dataSize = 0;
     }
 }
 
 template <typename T>
-unsigned RingBuffer<T>::getLen() const
+void RingBuffer<T>::clear()
 {
-    return len;
+    m_readPos  = 0;
+    m_dataSize = 0;
+}
+
+template <typename T>
+unsigned RingBuffer<T>::dataSize() const
+{
+    return m_dataSize;
 }
 
 #endif // RINGBUFFER_H
