@@ -68,10 +68,10 @@ void Ymodem::YmodemTransferHead()
 
     if(mYmodemMode == "Ymodem 128"){
         kPayload   = 128;
-        buf[0] = 0x01;               // SOH
+        buf[0] = YmodemCMD::SOH;               // SOH
     }else if(mYmodemMode == "Ymodem 1024"){
         kPayload   = 1024;
-        buf[0] = 0x02;               // STX
+        buf[0] = YmodemCMD::STX;               // STX
     }
 
     // 包序 和 包序反码
@@ -107,10 +107,10 @@ void Ymodem::YmodemTransferEnd()
 
     if(mYmodemMode == "Ymodem 128"){
         kPayload   = 128;
-        buf[0] = 0x01;               // SOH
+        buf[0] = YmodemCMD::SOH;               // SOH
     }else if(mYmodemMode == "Ymodem 1024"){
         kPayload   = 1024;
-        buf[0] = 0x02;               // STX
+        buf[0] = YmodemCMD::STX;               // STX
     }
     // 包序 和 包序反码
     buf[1] = 0x00;
@@ -128,20 +128,21 @@ void Ymodem::YmodemTransferEnd()
     emit sendBytes(QByteArray(reinterpret_cast<const char*>(buf), kPayload+5));
 }
 
-void Ymodem::YmodemTransfer()
+void Ymodem::YmodemTransfer(bool retry)
 {
     uint8_t buf[1034];  // 临时存储变量
 
     if(mYmodemMode == "Ymodem 128"){
         kPayload   = 128;
-        buf[0] = 0x01;               // SOH
+        buf[0] = YmodemCMD::SOH;               // SOH
     }else if(mYmodemMode == "Ymodem 1024"){
         kPayload   = 1024;
-        buf[0] = 0x02;               // STX
+        buf[0] = YmodemCMD::STX;               // STX
     }
 
     // 这是全局变量 从1到结束
-    packetNum++;
+    if(retry == false)
+        packetNum++;
     // 计算当前发送内容的偏移值
     int offset = (packetNum - 1) * kPayload;
     // 包序 和 包序反码
@@ -167,16 +168,9 @@ void Ymodem::YmodemTransfer()
     emit sendBytes(QByteArray(reinterpret_cast<const char*>(buf), kPayload+5));
 
     // 将本次发送的数量进行记录，放到进度条
-    YmodemSendCount += bytesToCopy;
+    if(retry == false)
+        YmodemSendCount += bytesToCopy;
     emit ymodemStateChange(SendPercent,QString::number(YmodemSendCount * 100/YmodeArray.size()));
-
-    // 状态进入发送完成状态
-    if((int32_t)(packetNum * kPayload) > YmodeArray.size())
-    {
-        send_state = Ymodem::YMODEM_SEND_ALL_FINISH;
-    }else{
-        send_state = Ymodem::YMODEM_SEND_DOWN;
-    }
 }
 
 void Ymodem::onReadBytes(QByteArray bytes)
@@ -187,7 +181,7 @@ void Ymodem::onReadBytes(QByteArray bytes)
     if(startTransfer)
     {
         m_ringBuffer.write((char*)bytes.constData(),bytes.length());
-        if(bytes.contains(0x18)){
+        if(bytes.contains(YmodemCMD::CAN)){
             send_state = IDLE;
             startTransfer = false;
             emit ymodemStateChange(SendPercent,QString::number(0));
@@ -246,7 +240,7 @@ void Ymodem::onMainTimeout()
                 if(m_ringBuffer.dataSize() >= 2){
                     char data1 = m_ringBuffer.at(0);
                     char data2 = m_ringBuffer.at(1);
-                    if(data1 == 0X06 && data2 == 'C'){
+                    if(data1 == YmodemCMD::ACK && data2 == 'C'){
                         send_state = YMODEM_SEND;
                         m_ringBuffer.advanceReadPos(2);
                     }else{
@@ -256,33 +250,47 @@ void Ymodem::onMainTimeout()
             }
             break;
         case Ymodem::YMODEM_SEND:
-            YmodemTransfer();
+            YmodemTransfer(false);
+            send_state = YMODEM_SEND_DOWN;
             qDebug()<< "state:"<<send_state;
+            break;
+        case Ymodem::YMODEM_SEND_RETRY:
+            YmodemTransfer(true);
+            retryCount++;
+            emit ymodemStateChange(SendInfo,QString("重发第%1次").arg(retryCount));
+            if(retryCount > 5){
+                send_state = Ymodem::IDLE;
+                startTransfer = false;
+                emit ymodemStateChange(SendPercent,QString::number(0));
+                emit ymodemStateChange(SendTransferState,QString("2"));
+                MainTimer.stop();
+                m_ringBuffer.clear();
+            }
+            send_state = Ymodem::YMODEM_SEND_DOWN;
             break;
         case Ymodem::YMODEM_SEND_DOWN:
             if(m_ringBuffer.dataSize()!=0){
                 qDebug()<< "state:"<<send_state;
                 char data = m_ringBuffer.at(0);
-                if(data == 0X06){
-                    send_state = YMODEM_SEND;
+                if(data == YmodemCMD::ACK){
+                    // 状态进入发送完成状态
+                    if((int32_t)(packetNum * kPayload) > YmodeArray.size())
+                    {
+                        send_state = Ymodem::YMODEM_SEND_SEND_EOT;
+                    }else{
+                        send_state = Ymodem::YMODEM_SEND;
+                    }
+                    retryCount = 0;
+                }else if(data == YmodemCMD::NAK){
+                    send_state = Ymodem::YMODEM_SEND_RETRY;
                 }
                 m_ringBuffer.advanceReadPos(1);
             }
             break;
-        case Ymodem::YMODEM_SEND_ALL_FINISH:
-            if(m_ringBuffer.dataSize()!=0){
-                qDebug()<< "state:"<<send_state;
-                char data = m_ringBuffer.at(0);
-                if(data == 0X06){
-                    send_state = YMODEM_SEND_SEND_EOT;
-                }
-                m_ringBuffer.advanceReadPos(1);
-            }
-        break;
         case Ymodem::YMODEM_SEND_SEND_EOT:
             {
                 QByteArray bytes;
-                bytes.append(0x04);
+                bytes.append(YmodemCMD::EOT);
                 emit sendBytes(bytes);
                 send_state = YMODEM_SEND_WAIT_EOT_ACK;
                 break;
@@ -299,9 +307,9 @@ void Ymodem::onMainTimeout()
             if(m_ringBuffer.dataSize()!=0){
                 qDebug()<< "state:"<<send_state;
                 char data = m_ringBuffer.at(0);
-                if(data == 0X06){
+                if(data == YmodemCMD::ACK){
                     send_state = YMODEM_SEND_WAIT_NEXT_FILE_C;
-                }else if(data == 0X15){
+                }else if(data == YmodemCMD::NAK){
                     send_state = YMODEM_SEND_SEND_EOT_2;
                 }
                 m_ringBuffer.advanceReadPos(1);
@@ -327,7 +335,7 @@ void Ymodem::onMainTimeout()
             if(m_ringBuffer.dataSize()!=0){
                 qDebug()<< "state:"<<send_state;
                 char data = m_ringBuffer.at(0);
-                if(data == 0X06){
+                if(data == YmodemCMD::ACK){
                     send_state = IDLE;
                     startTransfer = false;
                     emit ymodemStateChange(SendPercent,QString::number(0));

@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle("简易上位机 V2.0.5");
+    setWindowTitle("简易上位机 V2.0.6");
 
     QDir dir(QCoreApplication::applicationDirPath());
     mIniFile = dir.filePath("Config/settings.ini");
@@ -32,6 +32,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->widget_Recv,&RecvAreaForm::sendBytes,ui->widget_IOSetting,&IOSettingsForm::onSendBytes);
     connect(ui->widget_Send,&SendAreaForm::sendBytes,ui->widget_IOSetting,&IOSettingsForm::onSendBytes);
     connect(ui->widget_Send,&SendAreaForm::sendFile,ui->widget_IOSetting,&IOSettingsForm::onSendFile);
+    connect(ui->widget_Send,&SendAreaForm::stateChange,ui->widget_state,&StateForm::onStateChange);
 
     ui->widget_IOSetting->setProgressBar(ui->widget_Send->getProgressBar());
 

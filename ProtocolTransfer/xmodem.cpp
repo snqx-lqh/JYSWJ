@@ -46,18 +46,14 @@ void Xmodem::onReadBytes(QByteArray bytes)
 {
     if(startTransfer)
     {
-        if(bytes[0] == 'C' && send_state == Xmodem::WAIT_C){
-            send_state = XMODEM_SEND;
-        }else if((uint8_t)bytes[0] == 0x06 && send_state == Xmodem::XMODEM_SEND_DOWN){
-            send_state = XMODEM_SEND;
-        }else if((uint8_t)bytes[0] == 0x06 && send_state == Xmodem::XMODEM_SEND_ALL_FINISH){
-            send_state = XMODEM_SEND_SEND_EOT;
-        }else if((uint8_t)bytes[0] == 0x06 && send_state == Xmodem::XMODEM_SEND_WAIT_EOT_ACK){
+        m_ringBuffer.write((char*)bytes.constData(),bytes.length());
+        if(bytes.contains(0x18)){
             send_state = IDLE;
             startTransfer = false;
             emit xmodemStateChange(SendPercent,QString::number(0));
             emit xmodemStateChange(SendTransferState,QString("1"));
             MainTimer.stop();
+            m_ringBuffer.clear();
         }
     }
 }
@@ -89,17 +85,77 @@ void Xmodem::onMainTimeout()
     switch (send_state) {
         case Xmodem::IDLE:
             break;
+        case Xmodem::WAIT_C:
+            if(m_ringBuffer.dataSize()!=0){
+                qDebug()<< "state:"<<send_state;
+                char data = m_ringBuffer.at(0);
+                if(data == 'C'){
+                    send_state = XMODEM_SEND;
+                }
+                m_ringBuffer.advanceReadPos(1);
+            }
+            retryCount = 0;
+            break;
         case Xmodem::XMODEM_SEND:
-            XmodemTransfer();
+            XmodemTransfer(false);
+            send_state = Xmodem::XMODEM_SEND_DOWN;
+            break;
+        case Xmodem::XMODEM_SEND_RETRY:
+            XmodemTransfer(true);
+            retryCount++;
+            emit xmodemStateChange(SendInfo,QString("重发第%1次").arg(retryCount));
+            if(retryCount > 5){
+                send_state = Xmodem::IDLE;
+                startTransfer = false;
+                emit xmodemStateChange(SendPercent,QString::number(0));
+                emit xmodemStateChange(SendTransferState,QString("2"));
+                MainTimer.stop();
+                m_ringBuffer.clear();
+            }
+            send_state = Xmodem::XMODEM_SEND_DOWN;
+            break;
+        case Xmodem::XMODEM_SEND_DOWN:
+            if(m_ringBuffer.dataSize()!=0){
+                qDebug()<< "state:"<<send_state;
+                char data = m_ringBuffer.at(0);
+                if(data == XmodemCMD::ACK){
+                    // 状态进入发送完成状态
+                    if((int32_t)(packetNum * kPayload) > XmodeArray.size())
+                    {
+                        send_state = Xmodem::XMODEM_SEND_SEND_EOT;
+                    }else{
+                        send_state = Xmodem::XMODEM_SEND;
+                    }
+                    retryCount = 0;
+                }else if(data == XmodemCMD::NAK){
+                    send_state = Xmodem::XMODEM_SEND_RETRY;
+                }
+                m_ringBuffer.advanceReadPos(1);
+            }
             break;
         case Xmodem::XMODEM_SEND_SEND_EOT:
             {
                 QByteArray bytes;
-                bytes.append(0x04);
+                bytes.append(XmodemCMD::EOT);
                 emit sendBytes(bytes);
                 send_state = XMODEM_SEND_WAIT_EOT_ACK;
                 break;
             }
+        case Xmodem::XMODEM_SEND_WAIT_EOT_ACK:
+            if(m_ringBuffer.dataSize()!=0){
+                qDebug()<< "state:"<<send_state;
+                char data = m_ringBuffer.at(0);
+                if(data == XmodemCMD::ACK){
+                    send_state = IDLE;
+                    startTransfer = false;
+                    emit xmodemStateChange(SendPercent,QString::number(0));
+                    emit xmodemStateChange(SendTransferState,QString("1"));
+                    MainTimer.stop();
+                    m_ringBuffer.clear();
+                }
+                m_ringBuffer.advanceReadPos(1);
+            }
+        break;
         default:
             break;
         }
@@ -126,7 +182,7 @@ quint16 Xmodem::crc16_ccitt(const quint8 *ptr, qint32 len)
 }
 
 
-void Xmodem::XmodemTransfer()
+void Xmodem::XmodemTransfer(bool retry)
 {
     uint8_t buf[1034];  // 临时存储变量
 
@@ -139,7 +195,8 @@ void Xmodem::XmodemTransfer()
     }
 
     // 这是全局变量 从1到结束
-    packetNum++;
+    if(retry == false)
+        packetNum++;
     // 计算当前发送内容的偏移值
     int offset = (packetNum - 1) * kPayload;
     // 包序 和 包序反码
@@ -165,15 +222,8 @@ void Xmodem::XmodemTransfer()
     emit sendBytes(QByteArray(reinterpret_cast<const char*>(buf), kPayload+5));
 
     // 将本次发送的数量进行记录，放到进度条
-    XmodemSendCount += bytesToCopy;
+    if(retry == false)
+        XmodemSendCount += bytesToCopy;
     emit xmodemStateChange(SendPercent,QString::number(XmodemSendCount * 100/XmodeArray.size()));
-
-    // 状态进入发送完成状态
-    if((int32_t)(packetNum * kPayload) > XmodeArray.size())
-    {
-        send_state = Xmodem::XMODEM_SEND_ALL_FINISH;
-    }else{
-        send_state = Xmodem::XMODEM_SEND_DOWN;
-    }
 }
 

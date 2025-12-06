@@ -6,6 +6,9 @@
 #include <QFile>
 #include <QDebug>
 
+#include "ringbuffer.h"
+
+
 class Xmodem : public QObject
 {
     Q_OBJECT
@@ -22,10 +25,21 @@ public:
     };
     Q_ENUM(XmodemState)
 
+    enum XmodemCMD{
+        SOH = 0X01,
+        STX = 0X02,
+        EOT = 0X04,
+        ACK = 0X06,
+        NAK = 0X15,
+        CAN = 0X18
+    };
+    Q_ENUM(XmodemCMD)
+
     enum SEND_STATE{
         IDLE = 0,
         WAIT_C,
         XMODEM_SEND,
+        XMODEM_SEND_RETRY,
         XMODEM_SEND_DOWN,
         XMODEM_SEND_ALL_FINISH,
         XMODEM_SEND_SEND_EOT,
@@ -36,7 +50,7 @@ public:
     void    StartSendXmodem(QString XmodemMode, QString FilePath);
     void    CancelSendXmodem( );
     quint16 crc16_ccitt(const quint8 *ptr, qint32 len);
-    void    XmodemTransfer();
+    void    XmodemTransfer(bool retry);
 
 public slots:
     void onReadBytes(QByteArray bytes);
@@ -49,6 +63,7 @@ signals:
 private:
     bool IOConnect = false;
 
+    RingBuffer<char> m_ringBuffer;
     QTimer     MainTimer;
     QString    mXmodemMode;
     bool       startTransfer = false;
@@ -59,6 +74,7 @@ private:
     uint32_t   packetNum       = 0;          // 第一包序号从 1 开始
     int        kPayload        = 0;       // 一帧中的数据实际有效数据量
     SEND_STATE send_state;
+    int        retryCount      = 0;
 };
 
 #endif // XMODEM_H

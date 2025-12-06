@@ -19,6 +19,8 @@
 #include <QTimer>
 #include <QThread>
 
+#define MAX_CHARS 1000000
+
 class Terminal : public QPlainTextEdit
 {
     Q_OBJECT
@@ -57,6 +59,7 @@ public:
     void paste(void);
     void applyAnsi(const QString &seq);
     void delData(void);
+    void setTerminalMode(bool enable);
 private:
     QTextCodec *m_codec = nullptr;                      // 当前使用的编码
     bool mShowHexState  = false;
@@ -75,6 +78,8 @@ private:
     bool    m_expectUpEcho     = false;
     bool    m_expectDownEcho   = false;
     bool    m_expectEnterEcho  = false;
+
+    bool    terminalMode = false;
 
     KeyState keyState = KEY_NORMAL_STATE;
 

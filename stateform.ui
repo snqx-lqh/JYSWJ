@@ -44,7 +44,7 @@ border-radius:5px;
        <number>0</number>
       </property>
       <property name="rightMargin">
-       <number>0</number>
+       <number>15</number>
       </property>
       <property name="bottomMargin">
        <number>0</number>
@@ -82,6 +82,23 @@ border-radius:5px;
          </size>
         </property>
        </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton_github">
+        <property name="text">
+         <string>项目Github</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton_gitee">
+        <property name="text">
+         <string>项目Gitee</string>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

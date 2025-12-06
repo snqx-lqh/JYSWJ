@@ -37,3 +37,15 @@ void StateForm::onConnectInfo(QString Info)
 {
     ui->label_ConnectInfo->setText(Info);
 }
+
+void StateForm::on_pushButton_gitee_clicked()
+{
+    QDesktopServices::openUrl(QUrl("https://gitee.com/snqx-lqh/JYSWJ"));
+}
+
+
+void StateForm::on_pushButton_github_clicked()
+{
+    QDesktopServices::openUrl(QUrl("https://github.com/snqx-lqh/JYSWJ"));
+}
+

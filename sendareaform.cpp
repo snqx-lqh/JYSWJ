@@ -98,14 +98,15 @@ void SendAreaForm::onStateChange(STATE_CHANGE_TYPE_T type, int state)
 
 void SendAreaForm::onReadBytes(QByteArray bytes)
 {
-    mProtocolTransferForm.onReadBytes(bytes);
+    if(ui->tabWidget->currentIndex() == 1)
+        mProtocolTransferForm.onReadBytes(bytes);
 }
 
 
 void SendAreaForm::on_pushButton_Clear_clicked()
 {
     ui->plainTextEdit->clear();
-
+    emit stateChange(RecvClear_State,0);
 }
 
 

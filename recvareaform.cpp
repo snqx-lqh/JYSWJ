@@ -50,6 +50,7 @@ void RecvAreaForm::loadSettings()
     ui->checkBox_ShowHex->setChecked(settings.value("HexShow","false").toBool());
     ui->checkBox_ShowDate->setChecked(settings.value("DateShow","false").toBool());
     ui->checkBox_SendShow->setChecked(settings.value("SendShow","false").toBool());
+    ui->checkBox_Terminal->setChecked(settings.value("checkBox_Terminal","false").toBool());
     TextCodeC = settings.value("comboBox_codec","GBK").toString();
 
     settings.endGroup();
@@ -64,6 +65,7 @@ void RecvAreaForm::saveSettings()
     settings.setValue("DateShow",ui->checkBox_ShowDate->isChecked());
     settings.setValue("SendShow",ui->checkBox_SendShow->isChecked());
     settings.setValue("comboBox_codec",ui->comboBox_codec->currentText());
+    settings.setValue("checkBox_Terminal",ui->checkBox_Terminal->isChecked());
 
     settings.endGroup();
 }
@@ -81,7 +83,8 @@ void RecvAreaForm::onReadBytes(QByteArray bytes)
         receiveFile.write(bytes);
         receiveFile.flush();
     }
-    mWaveShowForm.onReadBytes(bytes);
+    if(ui->tabWidget->currentIndex() == 1)
+        mWaveShowForm.onReadBytes(bytes);
 }
 
 void RecvAreaForm::onAppendSendData(QByteArray bytes)
@@ -134,9 +137,6 @@ void RecvAreaForm::on_pushButton_ClearRecv_clicked()
 
 void RecvAreaForm::on_checkBox_RecvFile_stateChanged(int arg1)
 {
-
-
-
 }
 
 
@@ -158,6 +158,16 @@ void RecvAreaForm::on_checkBox_RecvFile_clicked(bool checked)
         if(receiveFile.isOpen()){
             receiveFile.close();
         }
+    }
+}
+
+
+void RecvAreaForm::on_checkBox_Terminal_stateChanged(int arg1)
+{
+    if(arg1 == 0){
+        ui->plainTextEdit->setTerminalMode(false);
+    }else {
+        ui->plainTextEdit->setTerminalMode(true);
     }
 }
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>502</width>
-    <height>300</height>
+    <width>655</width>
+    <height>324</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -163,6 +163,13 @@ QTabBar::tab:disabled {
               <widget class="QCheckBox" name="checkBox_SendShow">
                <property name="text">
                 <string>发送回显</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="checkBox_Terminal">
+               <property name="text">
+                <string>终端模式</string>
                </property>
               </widget>
              </item>

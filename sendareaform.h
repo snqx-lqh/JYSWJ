@@ -48,6 +48,7 @@ signals:
     void sendBytes(QByteArray bytes);
     void sendFile(QString file);
     void protocolStateChange(STATE_CHANGE_TYPE_T type,int state);
+    void stateChange(STATE_CHANGE_TYPE_T type,int state);
 
 private:
     Ui::SendAreaForm *ui;

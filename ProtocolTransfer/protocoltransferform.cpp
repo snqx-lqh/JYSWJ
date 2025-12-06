@@ -102,6 +102,8 @@ void ProtocolTransferForm::onXmodemStateChange(Xmodem::XmodemState type, QString
     }else if(type == Xmodem::SendTransferState){
         if(state == "1"){
             showMsg("green","传输完成");
+        }else if(state == QString("2")){
+            showMsg("red","取消传输");
         }else if(state == QString("DisConnected")){
             showMsg("red","退出传输，通信IO连接失败！");
         }

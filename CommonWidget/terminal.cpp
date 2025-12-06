@@ -22,6 +22,12 @@ Terminal::Terminal( QWidget *parent)
     QTextOption opt = document()->defaultTextOption();
     opt.setWrapMode(QTextOption::WrapAnywhere);   // 纯字符截断
     document()->setDefaultTextOption(opt);
+
+    connect(this, &QPlainTextEdit::textChanged, this, [=]() {
+        if (this->document()->characterCount() > MAX_CHARS) {
+            this->clear();
+        }
+    });
 }
 
 
@@ -36,8 +42,7 @@ void Terminal::setEncoding(const QByteArray &encodingName)
 void Terminal::appendData(const QByteArray &ba)
 {
     if (ba.isEmpty()) return;
-
-    //qDebug() << "Terminal::appendData current thread:" << QThread::currentThread();
+    textData.clear();
 
     // 使用常量引用，避免不必要的复制
     const QByteArray &data = ba;
@@ -59,7 +64,21 @@ void Terminal::appendData(const QByteArray &ba)
     }
 
     // ===== 文本模式 =====
-    QString text = m_codec ? m_codec->toUnicode(data) : QString::fromUtf8(data);
+    QString text;
+    if (m_codec) {
+        text = m_codec->toUnicode(data);
+        // 替换字符
+        text.replace(QChar(0x00), "\\0");
+    } else {
+        text = QString::fromUtf8(data);
+    }
+
+    // ===== 非终端模式，直接加载后退出 =====
+    if(!terminalMode){
+        cur.insertText(text, m_fmtCurrent);
+        setTextCursor(cur);
+        return;
+    }
 
     for (int i = 0; i < text.size(); ++i) {
         QChar ch = text.at(i);
@@ -165,7 +184,7 @@ void Terminal::appendData(const QByteArray &ba)
         }
 
     }
-
+    qDebug()<<"Terminal::insertText:"<<textData;
     cur.insertText(textData, m_fmtCurrent);
     textData.clear();
     setTextCursor(cur);
@@ -211,8 +230,6 @@ void Terminal::onReadBytes(QByteArray bytes)
     appendData(bytes);
 }
 
-
-
 bool Terminal::event(QEvent *ev)
 {
     if (ev->type() == QEvent::InputMethod) {
@@ -238,6 +255,10 @@ bool Terminal::event(QEvent *ev)
 void Terminal::keyPressEvent(QKeyEvent *ev)
 {
     QByteArray bytes;
+
+    if(!terminalMode){
+        return;
+    }
 
     switch (ev->key()) {
     case Qt::Key_Up:
@@ -469,6 +490,11 @@ void Terminal::applyAnsi(const QString &seq)
     }
 
     m_convert_start = true;
+}
+
+void Terminal::setTerminalMode(bool enable)
+{
+    terminalMode = enable;
 }
 
 

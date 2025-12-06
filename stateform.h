@@ -3,6 +3,8 @@
 
 #include <QWidget>
 #include "common.h"
+#include <QDesktopServices>
+#include <QUrl>
 
 namespace Ui {
 class StateForm;
@@ -19,6 +21,11 @@ public:
 public slots:
     void onStateChange(STATE_CHANGE_TYPE_T type,int state);
     void onConnectInfo(QString Info);
+private slots:
+    void on_pushButton_gitee_clicked();
+
+    void on_pushButton_github_clicked();
+
 private:
     Ui::StateForm *ui;
     quint64 sendCount = 0;

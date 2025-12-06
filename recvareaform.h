@@ -7,6 +7,7 @@
 #include "waveshowform.h"
 #include <QThread>
 
+#include <QElapsedTimer>
 
 namespace Ui {
 class RecvAreaForm;
@@ -49,6 +50,8 @@ private slots:
 
     void on_checkBox_RecvFile_clicked(bool checked);
 
+    void on_checkBox_Terminal_stateChanged(int arg1);
+
 private:
     Ui::RecvAreaForm *ui;
     WaveShowForm mWaveShowForm;
@@ -57,6 +60,7 @@ private:
     QFile         receiveFile;
     QTextStream   receiveTextStream;
     QString TextCodeC;
+    QElapsedTimer timer;
 };
 
 #endif // RECVAREAFORM_H
