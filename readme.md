@@ -100,7 +100,7 @@ quint16 Xmodem::crc16_ccitt(const quint8 *ptr, qint32 len)
 
 ### Ymodem协议
 
-![file-20251123214706182](../../../WebBlog/Repository/docs/嵌入式学习笔记/STM32_IAP_Bootloader/assets/YMODEM/file-20251123214706182.png)
+![file-20251123214706182](image/readme/file-20251123214706182.png)
 
 Ymodem协议使用如图的处理，通过表格表示如下，YModem协议兼容第一次发送EOT就返回ACK的情况，应为有的人写的Ymodem协议，没有发送EOT返回NAK后再发送EOT的情况，他们是发送EOT后直接就返回了ACK。
 
