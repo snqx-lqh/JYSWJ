@@ -13,36 +13,14 @@ RC_ICONS = favicon.ico
 LIBS += -ldbghelp
 
 SOURCES += \
-    iosettingsform.cpp \
     main.cpp \
-    mainwindow.cpp \
-    multisendform.cpp \
-    recvareaform.cpp \
-    sendareaform.cpp \
-    stateform.cpp \
-    toolbarform.cpp \
-    versionintroductionform.cpp
+    mainwindow.cpp
 
 HEADERS += \
-    common.h \
-    iosettingsform.h \
-    mainwindow.h \
-    multisendform.h \
-    recvareaform.h \
-    sendareaform.h \
-    stateform.h \
-    toolbarform.h \
-    versionintroductionform.h
+    mainwindow.h
 
 FORMS += \
-    iosettingsform.ui \
     mainwindow.ui \
-    multisendform.ui \
-    recvareaform.ui \
-    sendareaform.ui \
-    stateform.ui \
-    toolbarform.ui \
-    versionintroductionform.ui
 
 INCLUDEPATH += $$PWD/DeviceIOService
 include($$PWD/DeviceIOService/DeviceIOService.pri)
@@ -63,6 +41,9 @@ include($$PWD/CommonTools/CommonTools.pri)
 
 INCLUDEPATH += $$PWD/RingBuffer
 include($$PWD/RingBuffer/RingBuffer.pri)
+
+INCLUDEPATH += $$PWD/MainUI
+include($$PWD/MainUI/MainUI.pri)
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

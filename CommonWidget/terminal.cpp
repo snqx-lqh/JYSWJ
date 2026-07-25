@@ -6,7 +6,7 @@ Terminal::Terminal( QWidget *parent)
     : QPlainTextEdit(parent)
 {
     setFont(QFont("Consolas", 10));
-    setStyleSheet("background:#222;color:#ddd;");
+    //setStyleSheet("background:#222;color:#ddd;");
     setContentsMargins(0,0,0,0);
 
     m_codec = QTextCodec::codecForName("UTF-8");

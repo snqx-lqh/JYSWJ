@@ -6,5 +6,26 @@
         <file>images/versionInfo.png</file>
         <file>images/multisend.png</file>
         <file>images/favicon.ico</file>
+        <file>images/ic_fluent_chevron_down_16_filled.svg</file>
+        <file>images/ic_fluent_chevron_up_16_filled.svg</file>
+    </qresource>
+    <qresource prefix="/">
+        <file>styles/styles.qss</file>
+        <file>styles/iosettingsform.qss</file>
+        <file>styles/styles_dark.qss</file>
+        <file>styles/QSS/QSS_IMG/go-down-symbolic.symbolic.png</file>
+        <file>styles/QSS/QSS_IMG/go-next-symbolic.symbolic.png</file>
+        <file>styles/QSS/QSS_IMG/go-previous-symbolic.symbolic.png</file>
+        <file>styles/QSS/QSS_IMG/go-up-symbolic.symbolic.png</file>
+        <file>styles/QSS/QSS_IMG/object-select-symbolic.symbolic.png</file>
+        <file>styles/QSS/AMOLED.qss</file>
+        <file>styles/QSS/Aqua.qss</file>
+        <file>styles/QSS/ConsoleStyle.qss</file>
+        <file>styles/QSS/ElegantDark.qss</file>
+        <file>styles/QSS/MacOS.qss</file>
+        <file>styles/QSS/ManjaroMix.qss</file>
+        <file>styles/QSS/MaterialDark.qss</file>
+        <file>styles/QSS/NeonButtons.qss</file>
+        <file>styles/QSS/Ubuntu.qss</file>
     </qresource>
 </RCC>

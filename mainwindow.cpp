@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle("简易上位机 V2.0.6");
+    setWindowTitle("简易上位机 V2.0.7");
 
     QDir dir(QCoreApplication::applicationDirPath());
     mIniFile = dir.filePath("Config/settings.ini");
@@ -101,5 +101,18 @@ void MainWindow::onStateChange(STATE_CHANGE_TYPE_T type, int state)
 void MainWindow::on_actionIntro_triggered()
 {
     mVersionIntroductionForm.show();
+}
+
+
+void MainWindow::on_action_triggered()
+{
+    QDir dir(QCoreApplication::applicationDirPath());
+    QString pdfPath = dir.filePath("Doc/简易上位机使用说明书.pdf"); // 本地 PDF 路径
+    QFileInfo checkFile(pdfPath);
+    if(checkFile.exists() && checkFile.isFile()){
+        QDesktopServices::openUrl(QUrl::fromLocalFile(pdfPath));
+    } else {
+        qDebug() << "文件不存在:" << pdfPath;
+    }
 }
 

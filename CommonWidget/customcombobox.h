@@ -8,6 +8,22 @@
 #include <QDebug>
 #include <QDialog>
 #include <QMessageBox>
+#include <QStyle>
+#include <QStyledItemDelegate>
+#include <QComboBox>
+#include <QListView>
+#include <QFontMetrics>
+#include <QApplication>
+#include <QScreen>
+#include <QStyleOptionComboBox>
+#include <QPainter>
+#include <QStylePainter>
+#include <QFont>
+#include <QFontMetrics>
+#include <QTimer>
+#include <QApplication>
+#include <QDesktopWidget>
+
 
 class CustomComboBox : public QComboBox
 {
@@ -20,5 +36,7 @@ signals:
 private:
     QModelIndex m_rightClickIndex;
 };
+
+
 
 #endif // CUSTOMCOMBOBOX_H

@@ -1,0 +1,303 @@
+QWidget {
+    font-family: "Segoe UI Variable", "Segoe UI", "Microsoft YaHei", sans-serif;
+    font-size: 10pt;
+}
+
+#widget_MultiSend{
+    background-color:rgb(249, 249, 249);
+    border-width:1px;
+    border-radius:3px;
+}
+
+#widget_ioset{
+    background-color:rgb(230, 230, 230);
+    border-width:1px;
+    border-radius:3px;
+}
+
+#widget_Recv{
+    background-color:rgb(230, 230, 230);
+    border-width:1px;
+    border-radius:3px;
+}
+
+#widget_SendArea{
+    background-color:rgb(230, 230, 230);
+    border-width:1px;
+    border-radius:3px;
+}
+
+#widget_state{
+    background-color:rgb(230, 230, 230);
+    border-width:1px;
+    border-radius:3px;
+}
+
+#widget_ToolBar{
+    background-color:rgb(230, 230, 230);
+    border-width:1px;
+    border-radius:3px;
+}
+
+/* ========== 顶层窗口背景（QMainWindow, QDialog, QWidget 作为独立窗口） ========== */
+QMainWindow, QDialog, QWidget[windowType="Window"] {
+    background-color: #f3f3f3;       /* Win11 基础层背景色（浅灰） */
+}
+
+/* ---------- QLabel ---------- */
+QLabel {
+    color: #202020;            /* 主文本色，柔和黑 */
+    background: transparent;   /* 背景透明，让父控件的背景透出，这是 Win11 的风格 */
+    /* 确保多行文本有舒适的间距和换行 */
+    line-height: 1.3;         /* 行高设为字体大小的1.3倍，阅读更舒适 */
+    word-wrap: break-word;    /* 允许长单词或URL自动换行 */
+    /* 备选的文字截断方式，可根据需要调整 */
+    /* qproperty-wordWrap: true; */   /* 如需自动换行，可在Qt中或这里启用 */
+    /*font-size: 13pt;*/
+}
+
+/* ========== QComboBox 本体 ========== */
+QComboBox {
+    font-family: "Segoe UI Variable", "Segoe UI", "Microsoft YaHei", sans-serif;
+    /*font-size: 13pt;*/
+    color: #202020;
+    background-color: #ffffff;          /* 白色背景，Win11 输入控件特征 */
+    border: 1px solid #c0c0c0;          /* 边框，默认浅灰 */
+    border-radius: 2px;                 /* 小圆角 4px */
+    padding: 0.1em 1em 0.1em 0.1em; /* 右预留箭头空间，用 em 随字体缩放 上 右 下 左 */
+    min-height: 1em;                  /* 保证最小点击区域 */
+
+}
+
+/* 悬停态 */
+QComboBox:hover {
+    border-color: #0078d4;              /* 微软蓝，Win11 强调色 */
+    background-color: #f5f5f5;
+}
+
+/* 按下（点击展开）态 */
+QComboBox:pressed {
+    border-color: #106ebe;
+    background-color: #eaeaea;
+}
+
+/* 焦点态（键盘 tab 聚焦） */
+QComboBox:focus {
+    border-color: #0078d4;
+    outline: none;                      /* 去掉 Qt 默认的焦点虚线框 */
+}
+
+/* 禁用态 */
+QComboBox:disabled {
+    background-color: #f0f0f0;
+    color: #a0a0a0;
+    border-color: #d0d0d0;
+}
+
+/* ========== 下拉箭头 ========== */
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 1em;                       /* 箭头区域宽度，em 随字体缩放 */
+    border-left: none;                  /* 通常 Win11 箭头区域无分隔线 */
+    border-top-right-radius: 2px;      /* 与圆角一致 */
+    border-bottom-right-radius: 2px;
+}
+
+QComboBox::down-arrow {
+    image: url(:/images/images/ic_fluent_chevron_down_16_filled.svg);
+    width: 1em;
+    height: 1em;
+}
+
+QComboBox::down-arrow:on {
+    image: url(:/images/images/ic_fluent_chevron_up_16_filled.svg);
+}
+
+QComboBox QAbstractItemView {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;                 /* 大圆角，Win11 菜单特征 */
+    outline: 0px;
+    padding: 0em 0em;                   /* 上下留白，em 随字体缩放 */
+    /* 阴影效果（需要代码添加 QGraphicsDropShadowEffect） */
+}
+
+QComboBox QAbstractItemView::item {
+    font-family: "Segoe UI Variable", "Segoe UI", "Microsoft YaHei", sans-serif;
+    font-size: 9pt;
+    color: #202020;
+    padding: 0em 0em;
+    min-height: 1em;
+    background-color: transparent;
+}
+
+QComboBox QAbstractItemView::item:hover {
+    background-color: #e9f2fa;
+    color: #0078d4;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background-color: #0078d4;
+    color: #ffffff;
+}
+
+QComboBox QAbstractItemView::item:!hover:!selected {
+    background-color: transparent;
+}
+
+/* ========== 基础按钮样式 ========== */
+QPushButton {
+    font-family: "Segoe UI Variable", "Segoe UI", "Microsoft YaHei", sans-serif;
+    font-weight: normal;
+    color: #202020;
+    background-color: #ffffff;
+    border: 1px solid #c0c0c0;
+    border-radius: 2px;          /* 小圆角 4px */
+    padding: 0.1em 0.1em;           /* 上下6px，左右12px，保持舒适点击区域 */
+    min-height: 1em;            /* 保证最小高度，但不固定高度 */
+    /* 不要设置 width/min-width/max-width，让布局器决定宽度 */
+}
+
+/* 悬停态 */
+QPushButton:hover {
+    background-color: #f5f5f5;
+    border-color: #0078d4;       /* 微软蓝，Win11 强调色 */
+}
+
+/* 按下态 */
+QPushButton:pressed {
+    background-color: #e5e5e5;
+    border-color: #106ebe;
+    padding-top: 7px;            /* 模拟微小的按下下沉效果 */
+    padding-bottom: 5px;
+}
+
+/* 焦点态（键盘 Tab 聚焦） */
+QPushButton:focus {
+    outline: none;
+    border-color: #0078d4;
+    /* 可选：添加轻微外发光效果（需代码支持，QSS 无法直接实现 box-shadow） */
+}
+
+/* 禁用态 */
+QPushButton:disabled {
+    background-color: #f0f0f0;
+    color: #a0a0a0;
+    border-color: #d0d0d0;
+}
+
+/* ========== 默认按钮（例如对话框中的“确定”，高亮样式） ========== */
+QPushButton:default {
+    background-color: #0078d4;   /* Win11 强调色背景 */
+    color: #ffffff;
+    border-color: #0078d4;
+    font-weight: 500;
+}
+
+QPushButton:default:hover {
+    background-color: #106ebe;
+    border-color: #106ebe;
+}
+
+QPushButton:default:pressed {
+    background-color: #005a9e;
+    border-color: #005a9e;
+}
+
+QPushButton:default:disabled {
+    background-color: #a0c4e8;
+    border-color: #a0c4e8;
+    color: #e0e0e0;
+}
+
+/* ========== 次要按钮/链接按钮样式（文字按钮，无边框） ========== */
+QPushButton[flat="true"] {
+    background-color: transparent;
+    border: none;
+    color: #0078d4;
+    padding: 6px 8px;
+}
+
+QPushButton[flat="true"]:hover {
+    background-color: #e9f2fa;
+    border: none;
+}
+
+QPushButton[flat="true"]:pressed {
+    background-color: #d0e4f5;
+}
+
+/* ========== 危险按钮（删除、警告等） ========== */
+QPushButton[danger="true"] {
+    background-color: #ffffff;
+    border-color: #d13438;
+    color: #d13438;
+}
+
+QPushButton[danger="true"]:hover {
+    background-color: #d13438;
+    color: #ffffff;
+    border-color: #d13438;
+}
+
+QPushButton[danger="true"]:pressed {
+    background-color: #b82e34;
+    border-color: #b82e34;
+}
+
+/* ========== 单行输入框 QLineEdit ========== */
+QLineEdit {
+    font-family: "Segoe UI Variable", "Segoe UI", "Microsoft YaHei", sans-serif;
+    color: #202020;
+    background-color: #ffffff;
+    border: 1px solid #c0c0c0;
+    border-radius: 2px;          /* 小圆角 4px，与按钮一致 */
+    padding: 0.1em 0.1em;            /* 上下6px，左右8px，让文字不贴边 */
+    min-height: 1em;            /* 保证最小高度，但允许布局拉伸 */
+    /* 不要设置 width/min-width/max-width，让布局管理器控制宽度 */
+}
+
+/* 悬停态（鼠标悬浮时边框变色，Win11 交互反馈） */
+QLineEdit:hover {
+    border-color: #0078d4;       /* 微软蓝 */
+}
+
+/* 焦点态（键盘 Tab 聚焦或点击聚焦） */
+QLineEdit:focus {
+    border-color: #0078d4;
+    background-color: #fefefe;   /* 略微提亮，可选 */
+    outline: none;               /* 去掉 Qt 默认的焦点虚线框 */
+}
+
+/* 禁用态 */
+QLineEdit:disabled {
+    background-color: #f5f5f5;
+    color: #a0a0a0;
+    border-color: #d0d0d0;
+}
+
+/* 只读态（样式与禁用略不同，Win11 中只读通常背景略灰但文字可读） */
+QLineEdit:read-only {
+    background-color: #fafafa;
+    color: #606060;
+    border-color: #d0d0d0;
+}
+
+/* 占位符文本（placeholder text）样式 */
+QLineEdit::placeholder {
+    color: #9e9e9e;
+    font-style: normal;
+    /* 如果希望斜体，可以加 font-style: italic; 但 Win11 通常不是斜体 */
+}
+
+/* 错误状态（通过设置 property 或对象名，可选） */
+QLineEdit[error="true"] {
+    border-color: #d13438;       /* 红色边框表示错误 */
+    background-color: #fff6f5;
+}
+QLineEdit[error="true"]:focus {
+    border-color: #d13438;
+}
+
+

@@ -6,6 +6,7 @@
 #include <QDateTime>
 #include <QMessageBox>
 #include <QTextCodec>
+#include <QFile>
 
 LONG CreateCrashHander(EXCEPTION_POINTERS *pException)
 {
@@ -91,7 +92,12 @@ int main(int argc, char *argv[])
 
     SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)CreateCrashHander);
 
-
+    QFile file(":/styles/styles.qss");
+    if(file.open(QIODevice::ReadOnly))
+    {
+        qApp->setStyleSheet(file.readAll());
+        file.close();
+    }
     MainWindow w;
     w.show();
     return a.exec();

@@ -10,7 +10,19 @@ ProtocolTransferForm::ProtocolTransferForm(QWidget *parent) :
     QDir dir(QCoreApplication::applicationDirPath());
     m_iniFile = dir.filePath("Config/settings.ini");
 
-    ui->comboBox_HistoryFile->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLength);
+    QFile file(":/styles/styles.qss");
+    if(file.open(QIODevice::ReadOnly))
+    {
+        this->setStyleSheet(file.readAll());
+        file.close();
+    }
+
+    ui->cmb_SendMode->setItemDelegate(new QStyledItemDelegate(ui->cmb_SendMode));
+    ui->cmb_SendMode->addItem("Xmodem 128");
+    ui->cmb_SendMode->addItem("Xmodem 1024");
+    ui->cmb_SendMode->addItem("Ymodem 128");
+    ui->cmb_SendMode->addItem("Ymodem 1024");
+
     connect(&mXmodem,&Xmodem::sendBytes,this,&ProtocolTransferForm::sendBytes);
     connect(&mXmodem,&Xmodem::xmodemStateChange,this,&ProtocolTransferForm::onXmodemStateChange);
     connect(this,&ProtocolTransferForm::xmodemStateChange,&mXmodem,&Xmodem::onXmodemStateChange);
@@ -20,7 +32,13 @@ ProtocolTransferForm::ProtocolTransferForm(QWidget *parent) :
     connect(this,&ProtocolTransferForm::ymodemStateChange,&mYmodem,&Ymodem::onYmodemStateChange);
 
     ui->plainTextEdit->setFont(QFont("Consolas", 10));
+
+
     loadSettings();
+    qDebug()<<"加载 ProtocolTransferForm 配置";
+    // 在你更新了 QComboBox 的列表项之后
+//    ui->comboBox_HistoryFile->setSizeAdjustPolicy(QComboBox::AdjustToContents); // 核心语句
+//    ui->comboBox_HistoryFile->adjustSize(); // 确保布局能立即响应调整
 }
 
 ProtocolTransferForm::~ProtocolTransferForm()

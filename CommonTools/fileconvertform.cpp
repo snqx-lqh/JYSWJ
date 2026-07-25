@@ -9,6 +9,14 @@ FileConvertForm::FileConvertForm(QWidget *parent) :
     QDir dir(QCoreApplication::applicationDirPath());
     m_iniFile = dir.filePath("Config/settings.ini");
 
+    QFile file(":/styles/styles.qss");
+    if(file.open(QIODevice::ReadOnly))
+    {
+        this->setStyleSheet(file.readAll());
+        file.close();
+    }
+
+    ui->comboBox_ProtocolSelect->setItemDelegate(new QStyledItemDelegate(ui->comboBox_ProtocolSelect));
     ui->comboBox_ProtocolSelect->addItem("IMX6ULL_256_IMX");
     ui->comboBox_ProtocolSelect->addItem("IMX6ULL_512_IMX");
     ui->plainTextEdit->setFont(QFont("Consolas", 10));

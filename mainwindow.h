@@ -30,6 +30,8 @@ private slots:
 
     void on_actionIntro_triggered();
 
+    void on_action_triggered();
+
 private:
     Ui::MainWindow *ui;
     QString         mIniFile;

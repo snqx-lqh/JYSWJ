@@ -80,30 +80,10 @@
           </property>
           <property name="maximumSize">
            <size>
-            <width>90</width>
+            <width>16777215</width>
             <height>16777215</height>
            </size>
           </property>
-          <item>
-           <property name="text">
-            <string>Xmodem 128</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Xmodem 1024</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Ymodem 128</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Ymodem 1024</string>
-           </property>
-          </item>
          </widget>
         </item>
         <item>
@@ -163,7 +143,7 @@
       <item>
        <widget class="CustomComboBox" name="comboBox_HistoryFile">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -174,8 +154,17 @@
           <height>16777215</height>
          </size>
         </property>
+        <property name="sizeIncrement">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
         <property name="sizeAdjustPolicy">
-         <enum>QComboBox::AdjustToContents</enum>
+         <enum>QComboBox::AdjustToMinimumContentsLength</enum>
+        </property>
+        <property name="minimumContentsLength">
+         <number>20</number>
         </property>
        </widget>
       </item>

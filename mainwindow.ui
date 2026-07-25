@@ -73,6 +73,9 @@
        </item>
        <item>
         <widget class="QSplitter" name="splitter_2">
+         <property name="lineWidth">
+          <number>0</number>
+         </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -176,7 +179,14 @@
     </property>
     <addaction name="actionIntro"/>
    </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>帮助文档</string>
+    </property>
+    <addaction name="action"/>
+   </widget>
    <addaction name="menu"/>
+   <addaction name="menu_2"/>
   </widget>
   <action name="actionIntro">
    <property name="icon">
@@ -188,6 +198,11 @@
    </property>
    <property name="toolTip">
     <string>软件简介</string>
+   </property>
+  </action>
+  <action name="action">
+   <property name="text">
+    <string>软件使用说明</string>
    </property>
   </action>
  </widget>

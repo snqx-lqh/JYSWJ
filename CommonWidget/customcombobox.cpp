@@ -8,9 +8,16 @@
 CustomComboBox::CustomComboBox(QWidget *parent)
     : QComboBox(parent)
 {
-    // 控制大小策略（不自动扩展）
+    QFile file(":/styles/styles.qss");
+    if(file.open(QIODevice::ReadOnly))
+    {
+        this->setStyleSheet(file.readAll());
+        file.close();
+    }
     setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLength);
+    setMinimumContentsLength(20);
 
+    this->setItemDelegate(new QStyledItemDelegate(this));
 
     this->setToolTip(this->currentText());
     connect(this, &QComboBox::currentTextChanged,
